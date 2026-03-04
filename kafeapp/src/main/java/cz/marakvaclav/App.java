@@ -1,5 +1,7 @@
 package cz.marakvaclav;
 
+import java.util.Scanner;
+
 /**
  * Vitejte v KafeApp
  *
@@ -26,5 +28,7 @@ public class App
         kafar1.vypijKavu();
 
         System.out.println("Kafar " + kafar1.getLogin() + " vypil uz " + kafar1.getPocetVypitychKav() + " kav");
+
+        Scanner scanner = new Scanner(System.in); //dopsat funkce!!
     }
 }
