@@ -6,17 +6,23 @@ public class PolozkaSkladu {
     private String nazev;
     private float aktualniMnozstvi;
     private String jednotka;
-    
+    private float cenaZaKus;
+    private String menaPenezni;
+        
     public PolozkaSkladu() {
         nazev = "nezadano";
         aktualniMnozstvi = 0;
         jednotka = "bez jednotky";
+        cenaZaKus = 0;
+        menaPenezni = "CZK";
     }
 
-    public PolozkaSkladu(String nazev, float aktualniMnozstvi, String jednotka) {
+    public PolozkaSkladu(String nazev, float aktualniMnozstvi, String jednotka, float cenaZaKus, String menaPenezni) {
         this.nazev = nazev;
         this.aktualniMnozstvi = aktualniMnozstvi;
         this.jednotka = jednotka;
+        this.cenaZaKus = cenaZaKus;
+        this.menaPenezni = menaPenezni;
     }
 
     public String getNazev() {
@@ -42,4 +48,25 @@ public class PolozkaSkladu {
     public void setJednotka(String jednotka) {
         this.jednotka = jednotka;
     }
+
+    public String toCsv() {
+        return nazev + ";" + aktualniMnozstvi + ";" + jednotka;
+    }
+
+    public float getCenaZaKus() {
+        return cenaZaKus;
+    }
+
+    public void setCenaZaKus(float cenaZaKus) {
+        this.cenaZaKus = cenaZaKus;
+    }
+
+    public String getMenaPenezni() {
+        return menaPenezni;
+    }
+
+    public void setMenaPenezni(String menaPenezni) {
+        this.menaPenezni = menaPenezni;
+    }
+
 }

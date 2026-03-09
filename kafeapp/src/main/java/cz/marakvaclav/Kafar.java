@@ -1,13 +1,10 @@
 package cz.marakvaclav;
 
-public class Kafar {
-    private String login;
-    private String heslo;
+public class Kafar extends Uzivatel {
     private int pocetVypitychKav;
 
     public Kafar(String login, String heslo) {
-        this.login = login;
-        this.heslo = heslo;
+        super(login, heslo);
         this.pocetVypitychKav = 0;
     }
 
@@ -17,10 +14,15 @@ public class Kafar {
 
     public void vypijKavu() {
         this.pocetVypitychKav++;
-        System.out.println(login + " si dal kavu, celkem uz vipil: " + pocetVypitychKav);
+        System.out.println(login + " si dal kavu, celkem uz vypil: " + pocetVypitychKav);
     }
 
-    public String getLogin() {
-        return login;
+    public String toCsv() {
+        return login + ";" + heslo + ";" + pocetVypitychKav;
+    }
+
+    public void zaplatit() {
+        this.pocetVypitychKav = 0;
+        System.out.println(login + " zaplatil vsechny kavy");
     }
 }
