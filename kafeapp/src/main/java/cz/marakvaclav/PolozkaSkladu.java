@@ -2,10 +2,9 @@ package cz.marakvaclav;
 
 import java.math.BigDecimal;
 
-/**Reprezentuje surovinu na sklade */
-
 public class PolozkaSkladu {
     private String nazev;
+    private float koupeneMnozstvi;
     private float aktualniMnozstvi;
     private String jednotka;
     private BigDecimal cenaZaKus;
@@ -13,15 +12,17 @@ public class PolozkaSkladu {
         
     public PolozkaSkladu() {
         nazev = "nezadano";
+        koupeneMnozstvi = 0;
         aktualniMnozstvi = 0;
         jednotka = "bez jednotky";
         cenaZaKus = BigDecimal.ZERO;
         menaPenezni = "CZK";
     }
 
-    public PolozkaSkladu(String nazev, float aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(String nazev, float koupeneMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         this.nazev = nazev;
-        this.aktualniMnozstvi = aktualniMnozstvi;
+        this.koupeneMnozstvi = koupeneMnozstvi;
+        this.aktualniMnozstvi = koupeneMnozstvi;
         this.jednotka = jednotka;
         this.cenaZaKus = cenaZaKus;
         this.menaPenezni = menaPenezni;
@@ -35,12 +36,24 @@ public class PolozkaSkladu {
         this.nazev = nazev;
     }
 
-    public float getAktualniMnozstvi() {
-        return aktualniMnozstvi;
+    public float getKoupeneMnozstvi() {
+        return koupeneMnozstvi;
+    }
+
+    public void setKoupeneMnozstvi(float mnozstvi) {
+        this.koupeneMnozstvi = mnozstvi;
     }
 
     public void setAktualniMnozstvi(float mnozstvi) {
         this.aktualniMnozstvi = mnozstvi;
+    }
+
+    public float getAktualniMnozstvi() {
+        return aktualniMnozstvi;
+    }
+
+    public void spotrebujMnozstvi(float mnozstvi) {
+        aktualniMnozstvi -= mnozstvi;
     }
 
     public String getJednotka() {
@@ -52,7 +65,7 @@ public class PolozkaSkladu {
     }
 
     public String toCsv() {
-        return nazev + ";" + aktualniMnozstvi + ";" + jednotka;
+        return nazev + ";" + koupeneMnozstvi + ";" + jednotka;
     }
 
     public BigDecimal getCenaZaKus() {
@@ -70,5 +83,4 @@ public class PolozkaSkladu {
     public void setMenaPenezni(String menaPenezni) {
         this.menaPenezni = menaPenezni;
     }
-
 }
