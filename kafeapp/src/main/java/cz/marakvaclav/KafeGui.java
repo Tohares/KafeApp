@@ -31,9 +31,17 @@ public class KafeGui extends JFrame {
         
         setTitle("KafeApp");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600,400);
+        setSize(1024,768);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+
+        if (!SpravceSouboru.chybyIntegrity.isEmpty()) {
+            String message = String.join("\n", SpravceSouboru.chybyIntegrity);
+            JOptionPane.showMessageDialog(null, 
+                "Při načítání dat došlo k chybám integrity:\n" + message, 
+                "Kritická chyba dat", 
+                JOptionPane.WARNING_MESSAGE);
+        }
 
         adminPanel = new JPanel(new BorderLayout());
         
@@ -103,6 +111,7 @@ public class KafeGui extends JFrame {
                 Kafar k = kafari.get(vybranyRadek);
                 k.vypijKavu();
                 adminTableModel.setValueAt(k.getPocetVypitychKav(), vybranyRadek, 1);
+                SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
             }
         }
         else {
@@ -110,6 +119,7 @@ public class KafeGui extends JFrame {
                 if (k.getLogin().equals(prihlasenyUzivatel)) {
                     k.vypijKavu();
                     userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
+                    SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
                 }
             }
         }        
@@ -122,6 +132,7 @@ public class KafeGui extends JFrame {
                 Kafar k = kafari.get(vybranyRadek);
                 k.zaplatit();
                 adminTableModel.setValueAt(k.getPocetVypitychKav(), vybranyRadek, 1);
+                SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
             }
         }
         else {
@@ -129,6 +140,7 @@ public class KafeGui extends JFrame {
                 if (k.getLogin().equals(prihlasenyUzivatel)) {
                     k.zaplatit();
                     userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
+                    SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
                 }
             }
         }       
@@ -142,7 +154,7 @@ public class KafeGui extends JFrame {
             String login = loginDialog.getLogin();
             String heslo = loginDialog.getHeslo();
             String hesloHash = Uzivatel.hashHeslo(heslo);
-            System.out.println("Pokus o prihlaseni: " + login + " s heslem: " + heslo); //odstranit v ostre verzi
+            System.out.println("Pokus o prihlaseni: " + login + " s heslem: " + heslo + " hash: " + hesloHash); //odstranit v ostre verzi
             for (Kafar k : kafari) {
                 if (k.getLogin().equals(login) && k.getHesloHash().equals(hesloHash)) {
                     prihlasenyUzivatel = login;
@@ -177,6 +189,8 @@ public class KafeGui extends JFrame {
             String heslo = newUserDialog.getHeslo();
             Kafar k = new Kafar(login, heslo);
             kafari.add(k);
+            SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
+            updateView();
         }
     }
 

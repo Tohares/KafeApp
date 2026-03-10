@@ -29,37 +29,30 @@ public class App
 
         Admin admin = new Admin("admin", "adminheslo");
         
+        /**
         Kafar kafar1 = new Kafar("Vaclav", "heslo123");
         Kafar kafar2 = new Kafar("Petr", "tajneheslo");
         Kafar kafar3 = new Kafar("Honza", "tajneheslo2");
-        
-        List<Kafar> kafari = new ArrayList<>();
-        kafari.add(kafar1);
-        kafari.add(kafar2);
-        kafari.add(kafar3);
-        
-        System.out.println("Zahajuji evidenci kavy");
+        */
 
-        kafar1.vypijKavu();
-        kafar1.vypijKavu();
-        kafar2.vypijKavu();
-        kafar2.vypijKavu();
-        kafar2.vypijKavu();
-        kafar3.vypijKavu();
-        kafar3.vypijKavu();
-        kafar3.vypijKavu();
-        kafar3.vypijKavu();
-        kafar3.vypijKavu();
-        kafar3.vypijKavu();
-
-        System.out.println("Kafar " + kafar1.getLogin() + " vypil uz " + kafar1.getPocetVypitychKav() + " kav");
-        System.out.println("Kafar " + kafar2.getLogin() + " vypil uz " + kafar2.getPocetVypitychKav() + " kav");
-        System.out.println("Kafar " + kafar3.getLogin() + " vypil uz " + kafar3.getPocetVypitychKav() + " kav");
-        
+        final List<Kafar> kafari;
+        List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
+        if (nacteniKafaru == null) {
+            kafari = new ArrayList<>();
+        }
+        else {
+            kafari = nacteniKafaru;
+        }
+            
         SwingUtilities.invokeLater(() -> new KafeGui(kafari, admin));
 
-        System.out.println("Kafar " + kafar1.getLogin() + " vypil uz " + kafar1.getPocetVypitychKav() + " kav");
-        System.out.println("Kafar1 login: " + kafar1.getLogin() + "/n hashHeslo: " + kafar1.getHesloHash());
+        if (kafari.isEmpty()) {
+            System.out.println("Seznam kafaru je prazdny.");
+        } else {
+            for (Kafar k : kafari) {
+                System.out.println("Nacten uzivatel: " + k.getLogin() + " (kav: " + k.getPocetVypitychKav() + ")");
+            }
+        }
      
     }
 }

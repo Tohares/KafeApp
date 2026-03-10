@@ -10,7 +10,6 @@ public class NewUserDialog extends JDialog {
     private JPasswordField passwordFieldHesloFirst;
     private JPasswordField passwordFieldHesloSecond;
     private boolean succeeded;
-    private List<Kafar> kafari;
 
     public NewUserDialog(Frame parent, List<Kafar> kafari) {
         super(parent, "Vytvoreni noveho uzivatele", true); // true nastavuje modalitu
@@ -31,8 +30,6 @@ public class NewUserDialog extends JDialog {
 
         JButton btnOk = new JButton("OK");
         JButton btnStorno = new JButton("Storno");
-
-        this.kafari = kafari;
 
         btnOk.addActionListener(e -> {
             if (!Arrays.equals(passwordFieldHesloFirst.getPassword(), passwordFieldHesloSecond.getPassword())) {

@@ -12,13 +12,19 @@ public class Kafar extends Uzivatel {
         return pocetVypitychKav;
     }
 
+    public void setPocetVypitychKav(int pocetVypitychKav) {
+        this.pocetVypitychKav = pocetVypitychKav;
+    }
+
     public void vypijKavu() {
         this.pocetVypitychKav++;
         System.out.println(login + " si dal kavu, celkem uz vypil: " + pocetVypitychKav);
     }
 
     public String toCsv() {
-        return login + ";" + hesloHash + ";" + pocetVypitychKav;
+        String data = login + ";" + hesloHash + ";" + pocetVypitychKav;
+        String checkSum = Uzivatel.checkSum(data);
+        return data + ";" + checkSum;
     }
 
     public void zaplatit() {
