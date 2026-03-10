@@ -1,23 +1,25 @@
 package cz.marakvaclav;
 
+import java.math.BigDecimal;
+
 /**Reprezentuje surovinu na sklade */
 
 public class PolozkaSkladu {
     private String nazev;
     private float aktualniMnozstvi;
     private String jednotka;
-    private float cenaZaKus;
+    private BigDecimal cenaZaKus;
     private String menaPenezni;
         
     public PolozkaSkladu() {
         nazev = "nezadano";
         aktualniMnozstvi = 0;
         jednotka = "bez jednotky";
-        cenaZaKus = 0;
+        cenaZaKus = BigDecimal.ZERO;
         menaPenezni = "CZK";
     }
 
-    public PolozkaSkladu(String nazev, float aktualniMnozstvi, String jednotka, float cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(String nazev, float aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         this.nazev = nazev;
         this.aktualniMnozstvi = aktualniMnozstvi;
         this.jednotka = jednotka;
@@ -53,11 +55,11 @@ public class PolozkaSkladu {
         return nazev + ";" + aktualniMnozstvi + ";" + jednotka;
     }
 
-    public float getCenaZaKus() {
+    public BigDecimal getCenaZaKus() {
         return cenaZaKus;
     }
 
-    public void setCenaZaKus(float cenaZaKus) {
+    public void setCenaZaKus(BigDecimal cenaZaKus) {
         this.cenaZaKus = cenaZaKus;
     }
 

@@ -11,7 +11,6 @@ public class LoginDialog extends JDialog {
     public LoginDialog(Frame parent) {
         super(parent, "Prihlaseni", true); // true nastavuje modalitu
         
-        // Pouzijeme GridLayout pro jednoduchou mrizku (3 radky, 2 sloupce)
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
 
         panel.add(new JLabel("Login:"));
@@ -25,7 +24,6 @@ public class LoginDialog extends JDialog {
         JButton btnOk = new JButton("OK");
         JButton btnStorno = new JButton("Storno");
 
-        // Definice akci pro tlacitka
         btnOk.addActionListener(e -> {
             succeeded = true;
             dispose(); // Zavre dialog
@@ -39,12 +37,11 @@ public class LoginDialog extends JDialog {
         panel.add(btnOk);
         panel.add(btnStorno);
 
-        // Pridani panelu s okrajem (padding) do dialogu
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         getContentPane().add(panel, BorderLayout.CENTER);
 
         pack(); 
-        setLocationRelativeTo(parent); // Vycentrovat nad hlavnim oknem
+        setLocationRelativeTo(parent);
     }
 
     public String getLogin() {
@@ -52,7 +49,6 @@ public class LoginDialog extends JDialog {
     }
 
     public String getHeslo() {
-        // JPasswordField vraci char[], pro zjednoduseni prevedeme na String
         return new String(passwordFieldHeslo.getPassword());
     }
 

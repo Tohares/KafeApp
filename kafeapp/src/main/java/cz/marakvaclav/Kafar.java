@@ -18,7 +18,7 @@ public class Kafar extends Uzivatel {
     }
 
     public String toCsv() {
-        return login + ";" + heslo + ";" + pocetVypitychKav;
+        return login + ";" + hesloHash + ";" + pocetVypitychKav;
     }
 
     public void zaplatit() {
