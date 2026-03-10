@@ -37,7 +37,7 @@ public class LoginDialog extends JDialog {
         panel.add(btnOk);
         panel.add(btnStorno);
 
-                panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         getContentPane().add(panel, BorderLayout.CENTER);
 
         pack(); 

@@ -22,8 +22,8 @@ public class KafeGui extends JFrame {
     private JButton vypitButton;
     private JButton prihlasitButton;
     private JButton odhlasitButton;
+    private JButton zalozitUzivateleButton;
     private Admin admin;
-
 
     public KafeGui(List<Kafar> kafari, Admin admin) {
         this.kafari = kafari;
@@ -44,10 +44,6 @@ public class KafeGui extends JFrame {
                 return false;
             }
         };
-
-        for (Kafar k : kafari) {
-            adminTableModel.addRow(new Object[]{k.getLogin(), k.getPocetVypitychKav()});
-        }
 
         String[] sloupce2 = {"Uzivatel (login)", "Nezaplacene kavy", "Zaplacene kavy"};
         userTableModel = new DefaultTableModel(sloupce2, 0) {
@@ -80,16 +76,19 @@ public class KafeGui extends JFrame {
         vypitButton = new JButton("Vypit kavu");
         prihlasitButton = new JButton("Prihlasit");
         odhlasitButton = new JButton("Odhlasit");
+        zalozitUzivateleButton = new JButton("Vytvorit noveho uzivatele");
 
         zaplatitButton.addActionListener(e -> akceZaplatit());
         vypitButton.addActionListener(e -> akceVypitKavu());
         prihlasitButton.addActionListener(e -> akcePrihlasit());
         odhlasitButton.addActionListener(e -> akceOdhlasit());
+        zalozitUzivateleButton.addActionListener(e -> akceZalozitUzivatele());
 
         panelTlacitek.add(zaplatitButton);
         panelTlacitek.add(vypitButton);
         panelTlacitek.add(prihlasitButton);
         panelTlacitek.add(odhlasitButton);
+        panelTlacitek.add(zalozitUzivateleButton);
 
         add(panelTlacitek, BorderLayout.SOUTH);
 
@@ -153,6 +152,10 @@ public class KafeGui extends JFrame {
             }
             if (admin.getLogin().equals(login) && admin.getHesloHash().equals(hesloHash)) {
                 prihlasenyUzivatel = login;
+                adminTableModel.setRowCount(0);
+                for (Kafar k : kafari) {
+                    adminTableModel.addRow(new Object[]{k.getLogin(), k.getPocetVypitychKav()});
+                }
                 updateView();
                 return;
             }
@@ -165,31 +168,43 @@ public class KafeGui extends JFrame {
         updateView();
     }
 
+    private void akceZalozitUzivatele() {
+        NewUserDialog newUserDialog = new NewUserDialog(this, kafari);
+        newUserDialog.setVisible(true);
+
+        if (newUserDialog.isSucceeded()) {
+            String login = newUserDialog.getLogin();
+            String heslo = newUserDialog.getHeslo();
+            Kafar k = new Kafar(login, heslo);
+            kafari.add(k);
+        }
+    }
+
+    private void setButtonsVisible(boolean zaplatit, boolean vypit, boolean odhlasit, boolean prihlasit, boolean zalozit) {
+        zaplatitButton.setVisible(zaplatit);
+        vypitButton.setVisible(vypit);
+        odhlasitButton.setVisible(odhlasit);
+        prihlasitButton.setVisible(prihlasit);
+        zalozitUzivateleButton.setVisible(zalozit);
+    }
+
     private void updateView() {
         emptyPanel.removeAll();
 
         if (prihlasenyUzivatel == null) {
             emptyPanel.add(welcomePanel);
-            zaplatitButton.setVisible(false);
-            vypitButton.setVisible(false);
-            odhlasitButton.setVisible(false);
-            prihlasitButton.setVisible(true);
+            setButtonsVisible(false, false, false, true, true);
         } else if (prihlasenyUzivatel.equals(admin.getLogin())) {
             emptyPanel.add(adminPanel);
-            zaplatitButton.setVisible(true);
-            vypitButton.setVisible(true);
-            odhlasitButton.setVisible(true);
-            prihlasitButton.setVisible(false);
+            setButtonsVisible(true, false, true, false, true);
         }
         else {
+            userTableModel.setRowCount(0);
             for (Kafar k : kafari) {
                 if (k.getLogin().equals(prihlasenyUzivatel)) {
                     userTableModel.addRow(new Object[]{k.getLogin(), k.getPocetVypitychKav()});
                     emptyPanel.add(userPanel);
-                    zaplatitButton.setVisible(true);
-                    vypitButton.setVisible(true);
-                    odhlasitButton.setVisible(true);
-                    prihlasitButton.setVisible(false);
+                    setButtonsVisible(true, true, true, false, false);
                 }
             }
         }
