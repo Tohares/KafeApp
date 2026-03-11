@@ -11,7 +11,7 @@ public class App
     {
         System.out.println( "Vitejte v KafeApp" );
         
-        Admin admin = new Admin("admin", "adminheslo");
+        Admin admin = new Admin("admin", "adminheslo", "CZ1655000000003723676956");
         
         final List<Kafar> kafari;
         List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
@@ -30,6 +30,16 @@ public class App
         else {
             sklad = nacteniSkladu;
         }
+
+        final List<Vyuctovani> seznamVyuctovani;
+        List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
+        if (nacteniVyuctovani == null) {
+            seznamVyuctovani = new ArrayList<>();
+        }
+        else {
+            seznamVyuctovani = nacteniVyuctovani;
+        }
+
                     
         SwingUtilities.invokeLater(() -> new KafeGui(kafari, sklad, admin));
 

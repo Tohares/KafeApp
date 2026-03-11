@@ -56,13 +56,39 @@ public class KafeGui extends JFrame {
         kafariTableModel = new DefaultTableModel(sloupce, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 1;
             }
         };
         
         kafariPanel = new JPanel(new BorderLayout());
         kafariTable = new JTable(kafariTableModel);
-        kafariTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        kafariTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 20));
+        kafariTable.setFont(new Font("Arial", Font.PLAIN, 16));
+        kafariTable.setRowHeight(30);
+        kafariTable.getModel().addTableModelListener(e -> {
+            int row = e.getFirstRow();
+            int column = e.getColumn();
+
+            if (column == 1 && row >= 0) {
+                try {
+                    Object newValue = kafariTableModel.getValueAt(row, column);
+                    int novyPocet = Integer.parseInt(newValue.toString());
+
+                    String login = (String) kafariTableModel.getValueAt(row, 0);
+                    for (Kafar k : kafari) {
+                        if (k.getLogin().equals(login)) {
+                            k.setPocetVypitychKav(novyPocet);
+                            SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
+                            break;
+                        }
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Zadejte prosím platné číslo!", "Chyba formátu", JOptionPane.ERROR_MESSAGE);
+                    akcePrepnoutNaKafare(); 
+                }
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(kafariTable);
         kafariPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -76,10 +102,13 @@ public class KafeGui extends JFrame {
 
         userPanel = new JPanel(new BorderLayout());
         userTable = new JTable(userTableModel);
+        userTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 20));
+        userTable.setFont(new Font("Arial", Font.PLAIN, 16));
+        userTable.setRowHeight(30);
         JScrollPane userScrollPane = new JScrollPane(userTable); 
         userPanel.add(userScrollPane, BorderLayout.CENTER);
 
-        String[] sloupce3 = {"ID", "Nazev", "Koupene mnozstvi", "Aktualni mnozstvi", "Jednotka", "Cena za kus", "Mena"};
+        String[] sloupce3 = {"ID", "Nazev", "<html>Koupene<br>mnozstvi</html>", "<html>Aktualni<br>mnozstvi</html>", "Jednotka", "Cena za kus", "Mena"};
         skladTableModel = new DefaultTableModel(sloupce3, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -89,6 +118,10 @@ public class KafeGui extends JFrame {
 
         skladPanel = new JPanel(new BorderLayout());
         skladTable = new JTable(skladTableModel);
+        skladTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 20));
+        skladTable.getTableHeader().setPreferredSize(new Dimension(0,50));
+        skladTable.setFont(new Font("Arial", Font.PLAIN, 16));
+        skladTable.setRowHeight(30);
         JScrollPane skladScrollPane = new JScrollPane(skladTable);
         skladPanel.add(skladScrollPane, BorderLayout.CENTER);
 
@@ -160,13 +193,16 @@ public class KafeGui extends JFrame {
 
     private void akceVyuctovat() {
         System.out.println("Dodelat akceVyuctovat()");
-        /**if (prihlasenyUzivatel.equals(admin.getLogin())) {
-            VyuctovaniDialog vyuctovaniDialog = new VyuctovaniDialog(this);
+        if (prihlasenyUzivatel.equals(admin.getLogin())) {
+            VyuctovaniDialog vyuctovaniDialog = new VyuctovaniDialog(this, sklad, kafari, prihlasenyUzivatel);
             vyuctovaniDialog.setVisible(true);
 
             if (vyuctovaniDialog.isSucceeded()) {
-                PolozkaSkladu p = vyuctovaniDialog.getPolozka();
-        */
+                System.out.println("dopsat zobrazeni vyuctovani na panel");
+            }
+        }
+        updateView();
+        akcePrepnoutNaKafare();        
     }
 
     private void akceVypitKavu() {
@@ -191,24 +227,13 @@ public class KafeGui extends JFrame {
     }
 
     private void akceZaplatit() {
-        if (prihlasenyUzivatel.equals(admin.getLogin())) {
-            int vybranyRadek = kafariTable.getSelectedRow();
-            if (vybranyRadek >= 0) {
-                Kafar k = kafari.get(vybranyRadek);
+        for (Kafar k : kafari) {
+            if (k.getLogin().equals(prihlasenyUzivatel)) {
                 k.zaplatit();
-                kafariTableModel.setValueAt(k.getPocetVypitychKav(), vybranyRadek, 1);
+                userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
                 SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
             }
         }
-        else {
-            for (Kafar k : kafari) {
-                if (k.getLogin().equals(prihlasenyUzivatel)) {
-                    k.zaplatit();
-                    userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
-                    SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
-                }
-            }
-        }       
     }
 
     private void akcePrihlasit() {

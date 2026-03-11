@@ -9,14 +9,101 @@ import java.math.BigDecimal;
 
 public class SpravceSouboru {
     private static final String SOUBOR_DAT_KAFARI = "kafari.csv";
-    private static final String SOUBOR_LOCK_KAFARI = "kafe.lock";
+    private static final String SOUBOR_LOCK_KAFARI = "kafari.lock";
     private static final String SOUBOR_TMP_KAFARI = "kafari.csv.tmp";
     private static final String SOUBOR_DAT_SKLAD = "sklad.csv";
     private static final String SOUBOR_LOCK_SKLAD = "sklad.lock";
     private static final String SOUBOR_TMP_SKLAD = "sklad.csv.tmp";
+    private static final String SOUBOR_DAT_VYUCTOVANI = "vyuctovani.csv";
+    private static final String SOUBOR_LOCK_VYUCTOVANI = "vyuctovani.lock";
+    private static final String SOUBOR_TMP_VYUCTOVANI = "vyuctovani.csv.tmp";
 
     public static List<String> chybyIntegrity = new ArrayList<>();
 
+    public static void ulozVyuctovani(Vyuctovani vyuctovani, String prihlasenyUzivatel) {
+        if (!ziskejZamekDatVyuctovani(prihlasenyUzivatel)) {
+            System.err.println("Soubor vyuctovani.csv je blokovan jinym uzivatelem. Zkuste to pozdeji.");
+            return;
+        }
+
+        try {
+            List<String> radky = new ArrayList<>();
+            Path cestaKDatum = Paths.get(SOUBOR_DAT_VYUCTOVANI);
+            
+            if (Files.exists(cestaKDatum)) {
+                radky = Files.readAllLines(cestaKDatum);
+            }
+
+            boolean nalezen = false;
+            String novyRadek = vyuctovani.toCsv();
+
+            for (int i = 0; i < radky.size(); i++) {
+                if (radky.get(i).startsWith(vyuctovani.getLogin() + ";")) {
+                    radky.set(i, novyRadek);
+                    nalezen = true;
+                    break;
+                }
+            }
+            if (!nalezen) {
+                radky.add(novyRadek);
+            }
+
+            Path cestaTMP = Paths.get(SOUBOR_TMP_VYUCTOVANI);
+            Files.write(cestaTMP, radky);
+            
+            Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            podepisSouborDatVyuctovani(cestaKDatum);
+
+        } catch (IOException e) {
+            System.err.println("Chyba pri zapisu do souboru vyuctovani.csv: " + e.getMessage());
+        } finally {
+            uvolniZamekDatVyuctovani();
+        }
+    }
+
+    public static List<Vyuctovani> nactiVyuctovani() {
+        if (!ziskejZamekDatVyuctovani("appStart")) {
+            System.err.println("Soubor vyuctovani.csv je blokovan jinym uzivatelem. Zkuste to pozdeji.");
+            return null;
+        }
+
+        try {
+            List<String> radky = new ArrayList<>();
+            Path cestaKDatum = Paths.get(SOUBOR_DAT_VYUCTOVANI);
+            Path cestaKPodpisu = Paths.get(SOUBOR_DAT_VYUCTOVANI + ".sig");
+
+            if (Files.exists(cestaKDatum) && Files.exists(cestaKPodpisu)) {
+                String aktualniPodpis = Uzivatel.checkSum(new String(Files.readAllBytes(cestaKDatum)));
+                String ulozenyPodpis = Files.readString(cestaKPodpisu);
+
+                if (!aktualniPodpis.equals(ulozenyPodpis)) {
+                    chybyIntegrity.add("VAROVANI: Celistvost souboru vyuctovani.csv byla narusena!");
+                }
+            }
+            
+            if (Files.exists(cestaKDatum)) {
+                radky = Files.readAllLines(cestaKDatum);
+            }
+
+            List<Vyuctovani> seznamVyuctovani = new ArrayList<>();
+
+            for (int i = 0; i < radky.size(); i++) {
+                String[] vyuctovaniLine = radky.get(i).split(";");
+                if (vyuctovaniLine.length > 10) {
+                    Vyuctovani vyuctovani = new Vyuctovani();
+                    vyuctovani.fromCsv(vyuctovaniLine);
+                    seznamVyuctovani.add(vyuctovani);
+                }
+            }
+            return seznamVyuctovani;
+        } catch (IOException e) {
+            System.err.println("Chyba pri cteni ze souboru vyuctovani.csv: " + e.getMessage());
+        } finally {
+            uvolniZamekDatVyuctovani();
+        }
+        return null;
+    }
+    
     public static void ulozKafare(Kafar kafar, String prihlasenyUzivatel) {
         if (!ziskejZamekDatKafari(prihlasenyUzivatel)) {
             System.err.println("Soubor kafari.csv je blokovan jinym uzivatelem. Zkuste to pozdeji.");
@@ -183,8 +270,8 @@ public class SpravceSouboru {
                 if (polozkaLine.length == 7) {
                     int id = Integer.parseInt(polozkaLine[0]);
                     String nazev = polozkaLine[1];
-                    float koupeneMnozstvi = Float.parseFloat(polozkaLine[2]);
-                    float aktualniMnozstvi = Float.parseFloat(polozkaLine[3]);
+                    int koupeneMnozstvi = Integer.parseInt(polozkaLine[2]);
+                    int aktualniMnozstvi = Integer.parseInt(polozkaLine[3]);
                     String jednotka = polozkaLine[4];
                     BigDecimal cenaZaKus = new BigDecimal(polozkaLine[5]);
                     String menaPenezni = polozkaLine[6];
@@ -282,6 +369,47 @@ public class SpravceSouboru {
         byte[] dataSouboru = Files.readAllBytes(cesta);
         String hashSouboru = Uzivatel.checkSum(new String(dataSouboru)); 
         Files.writeString(Paths.get(SOUBOR_DAT_SKLAD + ".sig"), hashSouboru);
+    }
+
+    private static boolean ziskejZamekDatVyuctovani(String prihlasenyUzivatel) {
+        int pokusy = 0;
+        while (pokusy < 10) {
+            try {
+                Path lockPath = Paths.get(SOUBOR_LOCK_VYUCTOVANI);
+                if (Files.exists(lockPath)) {
+                    List<String> radky = new ArrayList<>();
+                    radky = Files.readAllLines(lockPath);
+                    String[] time = radky.get(0).split("@");
+                    if (Long.parseLong(time[2].trim()) < System.currentTimeMillis() - 10000) {
+                        Files.deleteIfExists(lockPath);
+                    }
+                }
+                if (!Files.exists(lockPath)) {
+                    Files.createFile(lockPath);
+                    String lockOwnerInfo = System.getProperty("user.name") + "@" + InetAddress.getLocalHost().getHostName() + 
+                        " user: " + prihlasenyUzivatel + " @" + System.currentTimeMillis();
+                    Files.writeString(lockPath, lockOwnerInfo);
+                    return true;
+                }
+            } catch (IOException e) {}
+            pokusy++;
+            try { Thread.sleep(200); } catch (InterruptedException e) {}
+        }
+        return false;
+    }
+
+    private static void uvolniZamekDatVyuctovani() {
+        try {
+            Files.deleteIfExists(Paths.get(SOUBOR_LOCK_VYUCTOVANI));
+        } catch (IOException e) {
+            System.err.println("Nepodařilo se smazat vyuctovani.lock soubor!");
+        }
+    }
+
+    private static void podepisSouborDatVyuctovani(Path cesta) throws IOException {
+        byte[] dataSouboru = Files.readAllBytes(cesta);
+        String hashSouboru = Uzivatel.checkSum(new String(dataSouboru)); 
+        Files.writeString(Paths.get(SOUBOR_DAT_VYUCTOVANI + ".sig"), hashSouboru);
     }
 
 }

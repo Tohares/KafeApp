@@ -6,8 +6,8 @@ public class PolozkaSkladu {
     private static int count = 0;
     private int id;
     private String nazev;
-    private float koupeneMnozstvi;
-    private float aktualniMnozstvi;
+    private int koupeneMnozstvi;
+    private int aktualniMnozstvi;
     private String jednotka;
     private BigDecimal cenaZaKus;
     private String menaPenezni;
@@ -23,7 +23,7 @@ public class PolozkaSkladu {
         menaPenezni = "CZK";
     }
 
-    public PolozkaSkladu(String nazev, float koupeneMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(String nazev, int koupeneMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         id = count;
         count++;
         this.nazev = nazev;
@@ -34,7 +34,7 @@ public class PolozkaSkladu {
         this.menaPenezni = menaPenezni;
     }
 
-    public PolozkaSkladu(int id, String nazev, float koupeneMnozstvi, float aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(int id, String nazev, int koupeneMnozstvi, int aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         this.id = id;
         if (id > count) {
             count = id + 1;
@@ -59,23 +59,23 @@ public class PolozkaSkladu {
         this.nazev = nazev;
     }
 
-    public float getKoupeneMnozstvi() {
+    public int getKoupeneMnozstvi() {
         return koupeneMnozstvi;
     }
 
-    public void setKoupeneMnozstvi(float mnozstvi) {
+    public void setKoupeneMnozstvi(int mnozstvi) {
         this.koupeneMnozstvi = mnozstvi;
     }
 
-    public void setAktualniMnozstvi(float mnozstvi) {
+    public void setAktualniMnozstvi(int mnozstvi) {
         this.aktualniMnozstvi = mnozstvi;
     }
 
-    public float getAktualniMnozstvi() {
+    public int getAktualniMnozstvi() {
         return aktualniMnozstvi;
     }
 
-    public void spotrebujMnozstvi(float mnozstvi) {
+    public void spotrebujMnozstvi(int mnozstvi) {
         aktualniMnozstvi -= mnozstvi;
     }
 
@@ -88,7 +88,7 @@ public class PolozkaSkladu {
     }
 
     public String toCsv() {
-        return id + ";" + nazev + ";" + koupeneMnozstvi + ";" + aktualniMnozstvi + ";" +jednotka + ";" + cenaZaKus + ";" + menaPenezni;
+        return id + ";" + nazev + ";" + koupeneMnozstvi + ";" + aktualniMnozstvi + ";" + jednotka + ";" + cenaZaKus + ";" + menaPenezni;
     }
 
     public BigDecimal getCenaZaKus() {

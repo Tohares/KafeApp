@@ -5,9 +5,7 @@ import java.awt.*;
 import java.math.BigDecimal;
 
 public class NovaPolozkaDialog extends JDialog{
-    private JTextField textFieldNazev;
     private JTextField textFieldKoupeneMnozstvi;
-    private JTextField textFieldJednotka;
     private JTextField textFieldCena;
     private JTextField textFieldMena;
     private PolozkaSkladu polozka;
@@ -20,16 +18,41 @@ public class NovaPolozkaDialog extends JDialog{
         JPanel panel = new JPanel(new GridLayout(6, 2, 10, 10));
 
         panel.add(new JLabel("Název:"));
-        textFieldNazev = new JTextField(15);
-        panel.add(textFieldNazev);
+        String[] nazvy = {"Kafe", "Mleko", "Cukr", "Kys. Citr."};
+        JComboBox<String> comboBoxNazev = new JComboBox<>(nazvy);
+        panel.add(comboBoxNazev);
 
-        panel.add(new JLabel("Koupené množství:"));
+        panel.add(new JLabel("Počet balení:"));
         textFieldKoupeneMnozstvi = new JTextField(15);
         panel.add(textFieldKoupeneMnozstvi);
 
-        panel.add(new JLabel("Jednotka:"));
-        textFieldJednotka = new JTextField(15);
-        panel.add(textFieldJednotka);
+        panel.add(new JLabel("Jednotka balení:"));
+        JComboBox<String> comboBoxJednotka = new JComboBox<>();
+        comboBoxJednotka.setEditable(false);
+        panel.add(comboBoxJednotka);
+
+        comboBoxNazev.addActionListener(e -> {
+            String nazev = (String) comboBoxNazev.getSelectedItem();
+            comboBoxJednotka.removeAllItems();
+            comboBoxJednotka.setEditable(false);
+            switch (nazev) {
+                case "Kafe":
+                    comboBoxJednotka.addItem("kg");
+                    comboBoxJednotka.addItem("0.5kg");
+                    break;
+                case "Mleko":
+                    comboBoxJednotka.addItem("l");
+                    break;
+                case "Cukr":
+                    comboBoxJednotka.addItem("kg");
+                    break;
+                case "Kys. Citr.":
+                    comboBoxJednotka.setEditable(true);
+                    break;
+            }
+        });
+                
+        comboBoxNazev.setSelectedIndex(0);
 
         panel.add(new JLabel("Cena za kus:"));
         textFieldCena = new JTextField(15);
@@ -37,6 +60,7 @@ public class NovaPolozkaDialog extends JDialog{
 
         panel.add(new JLabel("Měna:"));
         textFieldMena = new JTextField("CZK", 15);
+        textFieldMena.setEditable(false);
         panel.add(textFieldMena);
 
         JButton btnOk = new JButton("OK");
@@ -44,9 +68,9 @@ public class NovaPolozkaDialog extends JDialog{
 
         btnOk.addActionListener(e -> {
             try {
-                String nazev = textFieldNazev.getText();
-                float mnozstvi = Float.parseFloat(textFieldKoupeneMnozstvi.getText());
-                String jednotka = textFieldJednotka.getText();
+                String nazev = comboBoxNazev.getSelectedItem().toString();
+                int mnozstvi = Integer.parseInt(textFieldKoupeneMnozstvi.getText());
+                String jednotka = comboBoxJednotka.getSelectedItem().toString();
                 BigDecimal cena = new BigDecimal(textFieldCena.getText());
                 String mena = textFieldMena.getText();
 
