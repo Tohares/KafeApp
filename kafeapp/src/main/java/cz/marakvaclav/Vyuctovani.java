@@ -15,7 +15,7 @@ public class Vyuctovani {
     List<PolozkaSkladu> spotrebovanePolozky = null;
     String login = null;
     LocalDate datumVystaveni = null;
-    int pocetUctovanychKav = 1;
+    int pocetUctovanychKavCelkem = 1;
     BigDecimal celkovaCena = null;
     BigDecimal cenaJedneKavy = null;
     int pocetVypitychKav = 0;
@@ -25,20 +25,22 @@ public class Vyuctovani {
 
     public Vyuctovani() {}
 
-    public Vyuctovani(List<PolozkaSkladu> spotrebovanePolozky, String login, LocalDate datumDate, int pocetUctovanychKav) {
+    public Vyuctovani(List<PolozkaSkladu> spotrebovanePolozky, String login, LocalDate datumDate, int pocetUctovanychKavCelkem) {
         this.spotrebovanePolozky = spotrebovanePolozky;
         this.login = login;
         this.datumVystaveni = datumDate;
-        this.pocetUctovanychKav = pocetUctovanychKav;
+        this.pocetUctovanychKavCelkem = pocetUctovanychKavCelkem;
+        this.pocetVypitychKav = pocetUctovanychKavCelkem;
         stavPlatby = false;
         urciCelkovouCenu();
-        cenaJedneKavy = celkovaCena.divide(BigDecimal.valueOf(pocetUctovanychKav), 2, RoundingMode.HALF_UP);
+        cenaZaVypiteKavy = celkovaCena;
+        cenaJedneKavy = celkovaCena.divide(BigDecimal.valueOf(pocetUctovanychKavCelkem), 2, RoundingMode.HALF_UP);
     }
 
     public Vyuctovani(Vyuctovani vyuctovani, String login, int pocetVypitychKav) {
         this.login = login;
         this.datumVystaveni = vyuctovani.getDatumVystaveni();
-        this.pocetUctovanychKav = vyuctovani.getPocetUctovanychKav();
+        this.pocetUctovanychKavCelkem = vyuctovani.getPocetUctovanychKavCelkem();
         this.spotrebovanePolozky = vyuctovani.getSpotrebovanePolozky();
         this.celkovaCena = vyuctovani.getCelkovaCena();
         this.cenaJedneKavy = vyuctovani.getCenaJedneKavy();
@@ -55,7 +57,7 @@ public class Vyuctovani {
     }
 
     public String vypisPlatebniUdaje(Admin admin) {
-        if (admin.getCisloUctu() == null || admin.getCisloUctu().isEmpty()) {
+        if (admin.getCisloUctuIBAN() == null || admin.getCisloUctuIBAN().isEmpty()) {
         return "Chyba: Admin nemá nastavené číslo účtu!";
         }
 
@@ -64,14 +66,14 @@ public class Vyuctovani {
         StringBuilder sb = new StringBuilder();
         sb.append("Příjemce: ").append(admin.getLogin()).append("\n");
         sb.append("Částka: ").append(castkaStr).append(" CZK\n");
-        sb.append("Číslo účtu: ").append(admin.getCisloUctu()).append("\n");
+        sb.append("Číslo účtu: ").append(admin.getCisloUctuCZ()).append("\n");
         sb.append("Zpráva pro příjemce: KAFE-").append(login).append("-").append(datumVystaveni).append("\n");
         
         return sb.toString();
     }
 
     public BufferedImage vytvorQRKodProPlatbu(Admin admin) {
-        String messageQR = "SPD*1.0*ACC:" + admin.getCisloUctu() + 
+        String messageQR = "SPD*1.0*ACC:" + admin.getCisloUctuIBAN() + 
                            "*AM:" + cenaZaVypiteKavy.setScale(2, RoundingMode.HALF_UP).toPlainString() + 
                            "*CC:CZK*MSG:KAFE-" + login + 
                            "-" + datumVystaveni + 
@@ -99,8 +101,8 @@ public class Vyuctovani {
         return datumVystaveni;
     }
 
-    public int getPocetUctovanychKav() {
-        return pocetUctovanychKav;
+    public int getPocetUctovanychKavCelkem() {
+        return pocetUctovanychKavCelkem;
     }
 
     public BigDecimal getCelkovaCena() {
@@ -139,7 +141,7 @@ public class Vyuctovani {
         StringBuilder sb = new StringBuilder();
         sb.append(login).append(";");
         sb.append(datumVystaveni).append(";");
-        sb.append(pocetUctovanychKav).append(";");
+        sb.append(pocetUctovanychKavCelkem).append(";");
         sb.append(celkovaCena).append(";");
         sb.append(cenaJedneKavy).append(";");
         sb.append(pocetVypitychKav).append(";");
@@ -157,11 +159,25 @@ public class Vyuctovani {
     public void fromCsv(String[] line) {
         login = line[0];
         datumVystaveni = LocalDate.parse(line[1]);
-        pocetUctovanychKav = Integer.parseInt(line[2]);
+        pocetUctovanychKavCelkem = Integer.parseInt(line[2]);
         celkovaCena = new BigDecimal(line[3]);
+        if (line[3] != null && !line[3].equals("null") && !line[3].isEmpty()) {
+            celkovaCena = new BigDecimal(line[3]);
+        } else {
+            celkovaCena = null;
+        }
         cenaJedneKavy = new BigDecimal(line[4]);
+        if (line[4] != null && !line[4].equals("null") && !line[4].isEmpty()) {
+            cenaJedneKavy = new BigDecimal(line[4]);
+        } else {
+            cenaJedneKavy = null;
+        }
         pocetVypitychKav = Integer.parseInt(line[5]);
-        cenaZaVypiteKavy = new BigDecimal(line[6]);
+        if (line[6] != null && !line[6].equals("null") && !line[6].isEmpty()) {
+            cenaZaVypiteKavy = new BigDecimal(line[6]);
+        } else {
+            cenaZaVypiteKavy = null;
+        }
         stavPlatby = Boolean.parseBoolean(line[7]);
         if (line[8] != null && !line[8].equals("null") && !line[8].isEmpty()) {
             datumPlatby = LocalDate.parse(line[8]);

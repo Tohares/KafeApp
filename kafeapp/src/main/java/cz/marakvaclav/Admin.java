@@ -1,22 +1,32 @@
 package cz.marakvaclav;
 
 public class Admin extends Uzivatel {
-    private String cisloUctu = null;
+    private String cisloUctuIBAN = null;
+    private String cisloUctuCZ = null;
     
     public Admin(String login, String heslo) {
         super(login, heslo);
     }
 
-    public Admin(String login, String heslo, String cisloUctu) {
+    public Admin(String login, String heslo, String cisloUctuIBAN, String cisloUctuCZ) {
         super(login, heslo);
-        this.cisloUctu = cisloUctu;
+        this.cisloUctuIBAN = cisloUctuIBAN;
+        this.cisloUctuCZ = cisloUctuCZ;
     }
 
-    public String getCisloUctu() {
-        return cisloUctu;
+    public String getCisloUctuIBAN() {
+        return cisloUctuIBAN;
     }
 
-    public void setCisloUctu(String cisloUctu) {
-        this.cisloUctu = cisloUctu;
+    public void setCisloUctuIBAN(String cisloUctu) {
+        this.cisloUctuIBAN = cisloUctu;
+    }
+
+    public String getCisloUctuCZ() {
+        return cisloUctuCZ;
+    }
+
+    public void setCisloUctuCZ(String cisloUctu) {
+        this.cisloUctuCZ = cisloUctu;
     }
 }

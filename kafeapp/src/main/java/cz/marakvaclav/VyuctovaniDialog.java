@@ -102,6 +102,7 @@ public class VyuctovaniDialog extends JDialog {
                 Vyuctovani vyuctovaniKafare = new Vyuctovani(vyuctovani, k.getLogin(), k.getPocetVypitychKav());
                 SpravceSouboru.ulozVyuctovani(vyuctovaniKafare, login);
                 k.setPocetVypitychKav(0);
+                SpravceSouboru.ulozKafare(k, login);
             }
 
             succeeded = true;
@@ -125,13 +126,22 @@ public class VyuctovaniDialog extends JDialog {
     private PolozkaSkladu najdiPolozku(String nazev) {
         PolozkaSkladu combinedPolozka = null;
         for (PolozkaSkladu p : sklad) {
-            if (p.getNazev().equals(nazev)) {
+            if (p.getNazev().equals(nazev) && p.getAktualniMnozstvi() > 0) {
                 if (combinedPolozka == null) {
                     combinedPolozka = new PolozkaSkladu(p.getId(),p.getNazev(),p.getKoupeneMnozstvi(),
                         p.getAktualniMnozstvi(),p.getJednotka(),p.getCenaZaKus(),p.getMenaPenezni());
                 }
                 else if (combinedPolozka.getJednotka().equals(p.getJednotka())) {
                     combinedPolozka.setAktualniMnozstvi(combinedPolozka.getAktualniMnozstvi()+p.getAktualniMnozstvi());
+                }
+            }
+        }
+        if (combinedPolozka == null) {
+            for (PolozkaSkladu p : sklad) {
+                if (p.getNazev().equals(nazev)) {
+                    combinedPolozka = new PolozkaSkladu(p.getId(),p.getNazev(),p.getKoupeneMnozstvi(),
+                        p.getAktualniMnozstvi(),p.getJednotka(),p.getCenaZaKus(),p.getMenaPenezni());
+                    break;
                 }
             }
         }

@@ -11,18 +11,22 @@ public class KafeGui extends JFrame {
     private JTable kafariTable;
     private JTable userTable;
     private JTable skladTable;
+    private JTable uctenkyTable;
     private DefaultTableModel kafariTableModel;
     private DefaultTableModel userTableModel;
     private DefaultTableModel skladTableModel;
+    private DefaultTableModel uctenkyTableModel;    
     private List<Kafar> kafari;
     private List<PolozkaSkladu> sklad;
+    private List<Vyuctovani> seznamVyuctovani;
     private String prihlasenyUzivatel = null;
     private JPanel emptyPanel;
     private JPanel kafariPanel;
     private JPanel skladPanel;
+    private JPanel uctenkyPanel;
     private JPanel welcomePanel;
     private JPanel userPanel;
-    private JButton zaplatitButton;
+    private JButton uctenkyButton;
     private JButton vypitButton;
     private JButton prihlasitButton;
     private JButton odhlasitButton;
@@ -33,10 +37,11 @@ public class KafeGui extends JFrame {
     private JButton vyuctovatButton;
     private Admin admin;
 
-    public KafeGui(List<Kafar> kafari, List<PolozkaSkladu> sklad, Admin admin) {
+    public KafeGui(List<Kafar> kafari, List<PolozkaSkladu> sklad, List<Vyuctovani> seznamVyuctovani, Admin admin) {
         this.kafari = kafari;
         this.admin = admin;
         this.sklad = sklad;
+        this.seznamVyuctovani = seznamVyuctovani;
         
         setTitle("KafeApp");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,8 +57,8 @@ public class KafeGui extends JFrame {
                 JOptionPane.WARNING_MESSAGE);
         }
        
-        String[] sloupce = {"Uzivatel (login)", "Nezaplacene kavy", "Zaplacene kavy", "Uctovane kavy"};
-        kafariTableModel = new DefaultTableModel(sloupce, 0) {
+        String[] sloupceKafari = {"Uzivatel (login)", "Nezuctovane kavy", "Zaplacene kavy", "Uctovane kavy"};
+        kafariTableModel = new DefaultTableModel(sloupceKafari, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 1;
@@ -92,8 +97,8 @@ public class KafeGui extends JFrame {
         JScrollPane scrollPane = new JScrollPane(kafariTable);
         kafariPanel.add(scrollPane, BorderLayout.CENTER);
 
-        String[] sloupce2 = {"Uzivatel (login)", "Nezaplacene kavy", "Zaplacene kavy"};
-        userTableModel = new DefaultTableModel(sloupce2, 0) {
+        String[] sloupceUser = {"Uzivatel (login)", "Nezuctovane kavy", "Nezaplacene kavy", "Zaplacene kavy"};
+        userTableModel = new DefaultTableModel(sloupceUser, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -108,8 +113,8 @@ public class KafeGui extends JFrame {
         JScrollPane userScrollPane = new JScrollPane(userTable); 
         userPanel.add(userScrollPane, BorderLayout.CENTER);
 
-        String[] sloupce3 = {"ID", "Nazev", "<html>Koupene<br>mnozstvi</html>", "<html>Aktualni<br>mnozstvi</html>", "Jednotka", "Cena za kus", "Mena"};
-        skladTableModel = new DefaultTableModel(sloupce3, 0) {
+        String[] sloupceSklad = {"ID", "Nazev", "<html>Koupene<br>mnozstvi</html>", "<html>Aktualni<br>mnozstvi</html>", "Jednotka", "Cena za kus", "Mena"};
+        skladTableModel = new DefaultTableModel(sloupceSklad, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -125,6 +130,46 @@ public class KafeGui extends JFrame {
         JScrollPane skladScrollPane = new JScrollPane(skladTable);
         skladPanel.add(skladScrollPane, BorderLayout.CENTER);
 
+        String[] sloupceUctenky = {"Kafar", "Pocet kav", "Datum", "Cena jedne kavy", "Cena celkem", "Uhrazeno"};
+        uctenkyTableModel = new DefaultTableModel(sloupceUctenky, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        uctenkyPanel = new JPanel(new BorderLayout());
+        uctenkyTable = new JTable(uctenkyTableModel);
+        uctenkyTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 20));
+        uctenkyTable.getTableHeader().setPreferredSize(new Dimension(0,50));
+        uctenkyTable.setFont(new Font("Arial", Font.PLAIN, 16));
+        uctenkyTable.setRowHeight(30);
+        uctenkyTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = uctenkyTable.getSelectedRow();
+                if (selectedRow != -1) {
+                    for (Vyuctovani v : seznamVyuctovani) {
+                        if (v.getLogin().equals(uctenkyTableModel.getValueAt(selectedRow, 0).toString())) {
+                            if (!v.getStavPlatby() && 
+                                v.getDatumVystaveni().toString().equals(uctenkyTableModel.getValueAt(selectedRow, 2).toString()) &&
+                                v.getCenaZaVypiteKavy().toString().equals(uctenkyTableModel.getValueAt(selectedRow, 4).toString())) {
+                                PlatbaDialog platbaDialog = new PlatbaDialog(this, v, admin, prihlasenyUzivatel);
+                                platbaDialog.setVisible(true);
+                                if (platbaDialog.isSucceeded()) {
+                                    SpravceSouboru.ulozVyuctovani(v, prihlasenyUzivatel);
+                                    akceUctenky();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }                        
+            }
+        });
+        JScrollPane uctenkyScrollPane = new JScrollPane(uctenkyTable);
+        uctenkyPanel.add(uctenkyScrollPane, BorderLayout.CENTER);
+        
+
         welcomePanel = new JPanel(new GridBagLayout());
         JLabel vzkaz = new JLabel("Pro přístup se prosím přihlaste.");
         vzkaz.setFont(new Font("Arial", Font.BOLD, 16));
@@ -134,19 +179,17 @@ public class KafeGui extends JFrame {
         add(emptyPanel, BorderLayout.CENTER);
 
         JPanel panelTlacitek = new JPanel();
-        zaplatitButton = new JButton("Zaplatit");
+        
         vypitButton = new JButton("Vypit kavu");
         prihlasitButton = new JButton("Prihlasit");
         odhlasitButton = new JButton("Odhlasit");
         zalozitUzivateleButton = new JButton("Vytvorit noveho uzivatele");
 
-        zaplatitButton.addActionListener(e -> akceZaplatit());
         vypitButton.addActionListener(e -> akceVypitKavu());
         prihlasitButton.addActionListener(e -> akcePrihlasit());
         odhlasitButton.addActionListener(e -> akceOdhlasit());
         zalozitUzivateleButton.addActionListener(e -> akceZalozitUzivatele());
 
-        panelTlacitek.add(zaplatitButton);
         panelTlacitek.add(vypitButton);
         panelTlacitek.add(prihlasitButton);
         panelTlacitek.add(odhlasitButton);
@@ -159,16 +202,19 @@ public class KafeGui extends JFrame {
         skladButton = new JButton("Sklad");
         naskladnitButton = new JButton("Naskladnit");
         vyuctovatButton = new JButton("Vyuctovat");
+        uctenkyButton = new JButton("Uctenky");
         
         kafariButton.addActionListener(e -> akcePrepnoutNaKafare());
         skladButton.addActionListener(e -> akcePrepnoutNaSklad());
         naskladnitButton.addActionListener(e -> akceNaskladnit());
         vyuctovatButton.addActionListener(e -> akceVyuctovat());
+        uctenkyButton.addActionListener(e -> akceUctenky());
 
         panelTlacitekAdmina.add(kafariButton);
         panelTlacitekAdmina.add(skladButton);
         panelTlacitekAdmina.add(naskladnitButton);
         panelTlacitekAdmina.add(vyuctovatButton);
+        panelTlacitekAdmina.add(uctenkyButton);
 
         add(panelTlacitekAdmina, BorderLayout.NORTH);
 
@@ -192,47 +238,39 @@ public class KafeGui extends JFrame {
     }
 
     private void akceVyuctovat() {
-        System.out.println("Dodelat akceVyuctovat()");
         if (prihlasenyUzivatel.equals(admin.getLogin())) {
             VyuctovaniDialog vyuctovaniDialog = new VyuctovaniDialog(this, sklad, kafari, prihlasenyUzivatel);
             vyuctovaniDialog.setVisible(true);
 
             if (vyuctovaniDialog.isSucceeded()) {
-                System.out.println("dopsat zobrazeni vyuctovani na panel");
+                System.out.println("Vyuctovani ulozeno.");
             }
         }
+        seznamVyuctovani = SpravceSouboru.nactiVyuctovani();
         updateView();
-        akcePrepnoutNaKafare();        
+        akceUctenky();        
     }
 
     private void akceVypitKavu() {
-        if (prihlasenyUzivatel.equals(admin.getLogin())) {
-            int vybranyRadek = kafariTable.getSelectedRow();
-            if (vybranyRadek >= 0) {
-                Kafar k = kafari.get(vybranyRadek);
-                k.vypijKavu();
-                kafariTableModel.setValueAt(k.getPocetVypitychKav(), vybranyRadek, 1);
-                SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
-            }
-        }
-        else {
-            for (Kafar k : kafari) {
-                if (k.getLogin().equals(prihlasenyUzivatel)) {
-                    k.vypijKavu();
-                    userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
-                    SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
-                }
-            }
-        }        
-    }
-
-    private void akceZaplatit() {
         for (Kafar k : kafari) {
             if (k.getLogin().equals(prihlasenyUzivatel)) {
-                k.zaplatit();
+                k.vypijKavu();
                 userTableModel.setValueAt(k.getPocetVypitychKav(), 0, 1);
                 SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
             }
+        }
+    }        
+    
+    private void akceUctenky() {
+        if (prihlasenyUzivatel.equals(admin.getLogin())) {
+            uctenkyTableModel.setRowCount(0);
+            for (Vyuctovani v : seznamVyuctovani) {
+                uctenkyTableModel.addRow(new Object[]{v.getLogin(), v.getPocetVypitychKav(), v.getDatumVystaveni(),
+                                v.getCenaJedneKavy(), v.getCenaZaVypiteKavy(), v.getStavPlatby()});
+            }
+            updateView();
+            emptyPanel.add(uctenkyPanel);
+            return;
         }
     }
 
@@ -244,7 +282,6 @@ public class KafeGui extends JFrame {
             String login = loginDialog.getLogin();
             String heslo = loginDialog.getHeslo();
             String hesloHash = Uzivatel.hashHeslo(heslo);
-            System.out.println("Pokus o prihlaseni: " + login + " s heslem: " + heslo + " hash: " + hesloHash); //odstranit v ostre verzi
             for (Kafar k : kafari) {
                 if (k.getLogin().equals(login) && k.getHesloHash().equals(hesloHash)) {
                     prihlasenyUzivatel = login;
@@ -284,7 +321,20 @@ public class KafeGui extends JFrame {
         if (prihlasenyUzivatel.equals(admin.getLogin())) {
             kafariTableModel.setRowCount(0);
             for (Kafar k : kafari) {
-                kafariTableModel.addRow(new Object[]{k.getLogin(), k.getPocetVypitychKav()});
+                int nezuctovaneKavy = k.getPocetVypitychKav();
+                int zaplaceneKavy = 0;
+                int uctovaneKavy = 0;
+                for (Vyuctovani v : seznamVyuctovani) {
+                    if (v.getLogin().equals(k.getLogin())) {
+                        if (v.getStavPlatby()) {
+                            zaplaceneKavy += v.getPocetVypitychKav();
+                        }
+                        else {                            
+                            uctovaneKavy += v.getPocetVypitychKav();
+                        }                        
+                    }
+                }
+                kafariTableModel.addRow(new Object[]{k.getLogin(), nezuctovaneKavy, zaplaceneKavy, uctovaneKavy});
             }
             updateView();
             emptyPanel.add(kafariPanel);
@@ -305,9 +355,9 @@ public class KafeGui extends JFrame {
         }
     }
 
-    private void setButtonsVisible(boolean zaplatit, boolean vypit, boolean odhlasit, boolean prihlasit, boolean zalozit, boolean kafari,
+    private void setButtonsVisible(boolean uctenky, boolean vypit, boolean odhlasit, boolean prihlasit, boolean zalozit, boolean kafari,
             boolean sklad, boolean naskladnit, boolean vyuctovat) {
-        zaplatitButton.setVisible(zaplatit);
+        uctenkyButton.setVisible(uctenky);
         vypitButton.setVisible(vypit);
         odhlasitButton.setVisible(odhlasit);
         prihlasitButton.setVisible(prihlasit);
@@ -325,15 +375,38 @@ public class KafeGui extends JFrame {
             emptyPanel.add(welcomePanel);
             setButtonsVisible(false, false, false, true, true, false, false, false, false);
         } else if (prihlasenyUzivatel.equals(admin.getLogin())) {
-            setButtonsVisible(false, false, true, false, true, true, true, true, true);
+            setButtonsVisible(true, false, true, false, true, true, true, true, true);
         }
         else {
             userTableModel.setRowCount(0);
             for (Kafar k : kafari) {
                 if (k.getLogin().equals(prihlasenyUzivatel)) {
-                    userTableModel.addRow(new Object[]{k.getLogin(), k.getPocetVypitychKav()});
-                    emptyPanel.add(userPanel);
-                    setButtonsVisible(true, true, true, false, false, false, false, false, false);
+                    int nezuctovaneKavy = k.getPocetVypitychKav();
+                    int nezaplaceneKavy = 0;
+                    int zaplaceneKavy = 0;
+                                                            
+                    uctenkyTableModel.setRowCount(0);
+                    for (Vyuctovani v : seznamVyuctovani) {
+                        if (v.getLogin().equals(prihlasenyUzivatel)) {
+                            if (v.getStavPlatby()) {
+                                zaplaceneKavy += v.getPocetVypitychKav();
+                            }
+                            else {
+                                nezaplaceneKavy += v.getPocetVypitychKav();
+                            }
+                            uctenkyTableModel.addRow(new Object[]{v.getLogin(), v.getPocetVypitychKav(), v.getDatumVystaveni(),
+                                v.getCenaJedneKavy(), v.getCenaZaVypiteKavy(), v.getStavPlatby()});                            
+                        }
+                    }
+
+                    userTableModel.addRow(new Object[]{k.getLogin(), nezuctovaneKavy, nezaplaceneKavy, zaplaceneKavy});
+                    
+                    JPanel souhrnyPanel = new JPanel(new GridLayout(2, 1, 0, 10));
+                    souhrnyPanel.add(userPanel);
+                    souhrnyPanel.add(uctenkyPanel);
+                    emptyPanel.add(souhrnyPanel);
+
+                    setButtonsVisible(false, true, true, false, false, false, false, false, false);
                 }
             }
         }

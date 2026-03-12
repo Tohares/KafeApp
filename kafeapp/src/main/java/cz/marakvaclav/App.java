@@ -11,7 +11,7 @@ public class App
     {
         System.out.println( "Vitejte v KafeApp" );
         
-        Admin admin = new Admin("admin", "adminheslo", "CZ1655000000003723676956");
+        Admin admin = new Admin("admin", "adminheslo", "CZ1655000000003723676956", "3723676956/5500");
         
         final List<Kafar> kafari;
         List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
@@ -41,7 +41,7 @@ public class App
         }
 
                     
-        SwingUtilities.invokeLater(() -> new KafeGui(kafari, sklad, admin));
+        SwingUtilities.invokeLater(() -> new KafeGui(kafari, sklad, seznamVyuctovani, admin));
 
         if (kafari.isEmpty()) {
             System.out.println("Seznam kafaru je prazdny.");
