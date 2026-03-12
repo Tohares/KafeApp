@@ -39,7 +39,6 @@ public class App
         else {
             seznamVyuctovani = nacteniVyuctovani;
         }
-
                     
         SwingUtilities.invokeLater(() -> new KafeGui(kafari, sklad, seznamVyuctovani, admin));
 
@@ -49,7 +48,6 @@ public class App
             for (Kafar k : kafari) {
                 System.out.println("Nacten uzivatel: " + k.getLogin() + " (kav: " + k.getPocetVypitychKav() + ")");
             }
-        }
-     
+        }     
     }
 }
