@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
@@ -131,6 +132,7 @@ public class KafeGui extends JFrame {
         skladTable.getTableHeader().setPreferredSize(new Dimension(0,50));
         skladTable.setFont(new Font("Arial", Font.PLAIN, 16));
         skladTable.setRowHeight(30);
+        nastavOdsazeni(skladTable, 10);
         JScrollPane skladScrollPane = new JScrollPane(skladTable);
         skladPanel.add(skladScrollPane, BorderLayout.CENTER);
 
@@ -183,6 +185,7 @@ public class KafeGui extends JFrame {
                 }                        
             }
         });
+        nastavOdsazeni(uctenkyTable, 10);
         JScrollPane uctenkyScrollPane = new JScrollPane(uctenkyTable);
         uctenkyPanel.add(uctenkyScrollPane, BorderLayout.CENTER);
         
@@ -450,5 +453,24 @@ public class KafeGui extends JFrame {
         }
         emptyPanel.revalidate();
         emptyPanel.repaint();
+    }
+
+    private void nastavOdsazeni(JTable table, int padding) {
+        var margin = javax.swing.BorderFactory.createEmptyBorder(0, padding, 0, padding);
+        
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                super.getTableCellRendererComponent(t, v, s, f, r, c);
+                setBorder(margin);
+                return this;
+            }
+        };
+
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            if (table.getColumnClass(i) != Boolean.class) {
+                table.getColumnModel().getColumn(i).setCellRenderer(renderer);
+            }
+        }
     }
 }
