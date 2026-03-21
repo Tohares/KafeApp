@@ -83,6 +83,10 @@ public class KafeGui extends JFrame {
                 try {
                     Object newValue = kafariTableModel.getValueAt(row, column);
                     int novyPocet = Integer.parseInt(newValue.toString());
+                    
+                    if (novyPocet < 0) {
+                        throw new NumberFormatException("Záporné hodnoty nejsou povoleny.");
+                    }
 
                     String login = (String) kafariTableModel.getValueAt(row, 0);
                     for (Kafar k : kafari) {

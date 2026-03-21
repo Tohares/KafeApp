@@ -55,25 +55,31 @@ public class VyuctovaniDialog extends JDialog {
         btnOk.addActionListener(e -> {
             try{
                 spotrebovanePolozky = new ArrayList<>();
-                PolozkaSkladu spotrKafe = new PolozkaSkladu(-1,"Kafe",Integer.parseInt(textFieldKafe.getText()),Integer.parseInt(textFieldKafe.getText()),
+                
+                int mnozstviKafe = parseMnozstvi(textFieldKafe.getText());
+                int mnozstviMleka = parseMnozstvi(textFieldMleko.getText());
+                int mnozstviCukr = parseMnozstvi(textFieldCukr.getText());
+                int mnozstviCitr = parseMnozstvi(textFieldCitr.getText());
+
+                PolozkaSkladu spotrKafe = new PolozkaSkladu(-1,"Kafe",mnozstviKafe,mnozstviKafe,
                     najdiPolozku("Kafe").getJednotka(),najdiPolozku("Kafe").getCenaZaKus(),najdiPolozku("Kafe").getMenaPenezni());
                 spotrebovanePolozky.add(spotrKafe);
 
-                int mnozstviMleka = Integer.parseInt(textFieldMleko.getText());
                 BigDecimal cenaMleka = cenaMleka(mnozstviMleka);
                 PolozkaSkladu spotrMleko = new PolozkaSkladu(-1,"Mleko",mnozstviMleka,mnozstviMleka,
                     najdiPolozku("Mleko").getJednotka(),cenaMleka,najdiPolozku("Mleko").getMenaPenezni());
                 spotrebovanePolozky.add(spotrMleko);
 
-                PolozkaSkladu spotrCukr = new PolozkaSkladu(-1,"Cukr",Integer.parseInt(textFieldCukr.getText()),Integer.parseInt(textFieldCukr.getText()),
+                PolozkaSkladu spotrCukr = new PolozkaSkladu(-1,"Cukr",mnozstviCukr,mnozstviCukr,
                     najdiPolozku("Cukr").getJednotka(),najdiPolozku("Cukr").getCenaZaKus(),najdiPolozku("Cukr").getMenaPenezni());
                 spotrebovanePolozky.add(spotrCukr);
 
-                PolozkaSkladu spotrCitr = new PolozkaSkladu(-1,"Kys. Citr.",Integer.parseInt(textFieldCitr.getText()),Integer.parseInt(textFieldCitr.getText()),
+                PolozkaSkladu spotrCitr = new PolozkaSkladu(-1,"Kys. Citr.",mnozstviCitr,mnozstviCitr,
                     najdiPolozku("Kys. Citr.").getJednotka(),najdiPolozku("Kys. Citr.").getCenaZaKus(),najdiPolozku("Kys. Citr.").getMenaPenezni());
                 spotrebovanePolozky.add(spotrCitr);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Neplatný formát vstupních dat.", "Chyba", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             for (PolozkaSkladu spotr : spotrebovanePolozky) {
@@ -148,7 +154,21 @@ public class VyuctovaniDialog extends JDialog {
         return combinedPolozka;
     }
 
+    private int parseMnozstvi(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return 0;
+        }
+        int hodnota = Integer.parseInt(text.trim());
+        if (hodnota < 0) {
+            throw new NumberFormatException("Záporné hodnoty nejsou povoleny.");
+        }
+        return hodnota;
+    }
+
     private BigDecimal cenaMleka(int mnozstvi) {
+        if (mnozstvi <= 0) {
+            return BigDecimal.ZERO;
+        }
         int vstupniMnozstvi = mnozstvi;
         BigDecimal cena = BigDecimal.ZERO;
         for (PolozkaSkladu p : sklad) {

@@ -73,6 +73,10 @@ public class NovaPolozkaDialog extends JDialog{
                 String jednotka = comboBoxJednotka.getSelectedItem().toString();
                 BigDecimal cena = new BigDecimal(textFieldCena.getText());
                 String mena = textFieldMena.getText();
+                
+                if (mnozstvi < 0 || cena.compareTo(BigDecimal.ZERO) < 0) {
+                    throw new NumberFormatException("Záporné hodnoty nejsou povoleny.");
+                }
 
                 polozka = new PolozkaSkladu(nazev, mnozstvi, jednotka, cena, mena);
                 succeeded = true;
