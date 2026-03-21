@@ -99,6 +99,7 @@ public class KafeGui extends JFrame {
             }
         });
 
+        nastavOdsazeni(kafariTable, 10);
         JScrollPane scrollPane = new JScrollPane(kafariTable);
         kafariPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -115,6 +116,11 @@ public class KafeGui extends JFrame {
         userTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 20));
         userTable.setFont(new Font("Arial", Font.PLAIN, 16));
         userTable.setRowHeight(30);
+        userTable.setRowSelectionAllowed(false);
+        userTable.setColumnSelectionAllowed(false);
+        userTable.setCellSelectionEnabled(false);
+        userTable.setFocusable(false);
+        nastavOdsazeni(userTable, 10);
         JScrollPane userScrollPane = new JScrollPane(userTable); 
         userPanel.add(userScrollPane, BorderLayout.CENTER);
 
@@ -140,7 +146,7 @@ public class KafeGui extends JFrame {
         uctenkyTableModel = new DefaultTableModel(sloupceUctenky, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 5;
             }
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -162,29 +168,30 @@ public class KafeGui extends JFrame {
         uctenkyTable.getTableHeader().setPreferredSize(new Dimension(0,50));
         uctenkyTable.setFont(new Font("Arial", Font.PLAIN, 16));
         uctenkyTable.setRowHeight(30);
-        uctenkyTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int viewRow = uctenkyTable.getSelectedRow();
-                if (viewRow != -1) {
-                    int selectedRow = uctenkyTable.convertRowIndexToModel(viewRow);
-                    for (Vyuctovani v : seznamVyuctovani) {
-                        if (v.getLogin().equals(uctenkyTableModel.getValueAt(selectedRow, 0))) {
-                            if (!v.getStavPlatby() && 
-                                v.getDatumVystaveni().equals(uctenkyTableModel.getValueAt(selectedRow, 2)) &&
-                                v.getCenaZaVypiteKavy().equals(uctenkyTableModel.getValueAt(selectedRow, 4))) {
-                                PlatbaDialog platbaDialog = new PlatbaDialog(this, v, admin, prihlasenyUzivatel);
-                                platbaDialog.setVisible(true);
-                                if (platbaDialog.isSucceeded()) {
-                                    SpravceSouboru.ulozVyuctovani(v, prihlasenyUzivatel);
-                                    akceUctenky();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }                        
+        uctenkyTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+        uctenkyTable.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox(), this));
+        uctenkyTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            private int lastSelectedRow = -1;
+
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                int row = uctenkyTable.rowAtPoint(e.getPoint());
+                if (row == -1) {
+                    uctenkyTable.clearSelection();
+                    lastSelectedRow = -1;
+                } 
+                else if (row == lastSelectedRow) {
+                    uctenkyTable.clearSelection();
+                    lastSelectedRow = -1;
+                    uctenkyTable.getSelectionModel().setValueIsAdjusting(true);
+                    uctenkyTable.getSelectionModel().clearSelection();
+                    uctenkyTable.getSelectionModel().setValueIsAdjusting(false);
+                } else {
+                    lastSelectedRow = row;
+                }
             }
         });
+
         nastavOdsazeni(uctenkyTable, 10);
         JScrollPane uctenkyScrollPane = new JScrollPane(uctenkyTable);
         uctenkyPanel.add(uctenkyScrollPane, BorderLayout.CENTER);
@@ -278,6 +285,11 @@ public class KafeGui extends JFrame {
     }
 
     private void akceVyuctovat() {
+        int celkemKav = kafari.stream().mapToInt(Kafar::getPocetVypitychKav).sum();
+        if (celkemKav == 0) {
+            JOptionPane.showMessageDialog(this, "Není co vyúčtovat. Celkový počet vypitých káv je 0.", "Informace", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         if (prihlasenyUzivatel.equals(admin.getLogin())) {
             VyuctovaniDialog vyuctovaniDialog = new VyuctovaniDialog(this, sklad, kafari, prihlasenyUzivatel);
             vyuctovaniDialog.setVisible(true);
@@ -439,12 +451,18 @@ public class KafeGui extends JFrame {
                                 v.getCenaJedneKavy(), v.getCenaZaVypiteKavy(), v.getStavPlatby()});                            
                         }
                     }
+                    JPanel uctenkySekce = new JPanel(new BorderLayout(0, 5));
+                    JLabel nadpisUctenky = new JLabel("Historie vyúčtování a platby");
+                    nadpisUctenky.setFont(new Font("Arial", Font.BOLD, 18));
+                    nadpisUctenky.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 0));
+                    uctenkySekce.add(nadpisUctenky, BorderLayout.NORTH);
+                    uctenkySekce.add(uctenkyPanel, BorderLayout.CENTER);
 
                     userTableModel.addRow(new Object[]{k.getLogin(), nezuctovaneKavy, nezaplaceneKavy, zaplaceneKavy});
                     
                     JPanel souhrnyPanel = new JPanel(new GridLayout(2, 1, 0, 10));
                     souhrnyPanel.add(userPanel);
-                    souhrnyPanel.add(uctenkyPanel);
+                    souhrnyPanel.add(uctenkySekce);
                     emptyPanel.add(souhrnyPanel);
 
                     setButtonsVisible(false, true, true, false, false, false, false, false, false, true);
@@ -456,21 +474,62 @@ public class KafeGui extends JFrame {
     }
 
     private void nastavOdsazeni(JTable table, int padding) {
-        var margin = javax.swing.BorderFactory.createEmptyBorder(0, padding, 0, padding);
-        
+        var standardMargin = javax.swing.BorderFactory.createEmptyBorder(0, padding, 0, padding);
+        var indentedMargin = javax.swing.BorderFactory.createEmptyBorder(0, padding + 10, 0, padding);
+
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
                 super.getTableCellRendererComponent(t, v, s, f, r, c);
-                setBorder(margin);
+
+                // Zjistíme login uživatele na aktuálním řádku (vždy ze sloupce 0)
+                // Musíme převést index řádku, protože tabulka může být seřazená
+                int modelRow = t.convertRowIndexToModel(r);
+                String login = t.getModel().getValueAt(modelRow, 0).toString();
+
+                // Pokud jsme v prvním sloupci (Jméno) a login NENÍ admin, odsadíme ho
+                if (c == 0 && !login.equalsIgnoreCase("admin")) {
+                    setBorder(indentedMargin);
+                } else {
+                    setBorder(standardMargin);
+                }
+
                 return this;
             }
         };
 
+        // Aplikujeme renderer na sloupce (vynecháme Boolean/Tlačítka)
         for (int i = 0; i < table.getColumnCount(); i++) {
-            if (table.getColumnClass(i) != Boolean.class) {
+            Class<?> columnClass = table.getColumnClass(i);
+            // Tady pozor: pokud jsi už přidal ButtonRenderer, taky ho přeskoč
+            if (columnClass != Boolean.class && columnClass != JButton.class) {
                 table.getColumnModel().getColumn(i).setCellRenderer(renderer);
             }
         }
     }
+
+    public Vyuctovani najdiVyuctovaniZRadku(int modelRow) {
+        String loginTab = uctenkyTableModel.getValueAt(modelRow, 0).toString();
+        LocalDate datumTab = (LocalDate) uctenkyTableModel.getValueAt(modelRow, 2);
+        BigDecimal cenaTab = (BigDecimal) uctenkyTableModel.getValueAt(modelRow, 4);
+
+        for (Vyuctovani v : seznamVyuctovani) {
+            if (v.getLogin().equals(loginTab) && 
+                v.getDatumVystaveni().equals(datumTab) && 
+                v.getCenaZaVypiteKavy().equals(cenaTab)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public void otevriPlatbu(Vyuctovani v) {
+        PlatbaDialog platbaDialog = new PlatbaDialog(this, v, admin, prihlasenyUzivatel);
+        platbaDialog.setVisible(true);
+        if (platbaDialog.isSucceeded()) {
+            SpravceSouboru.ulozVyuctovani(v, prihlasenyUzivatel);
+            akceUctenky(); // Refresh tabulky
+        }
+    }
+
 }
