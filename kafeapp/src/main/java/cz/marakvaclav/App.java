@@ -21,7 +21,7 @@ public class App
             if (!configFile.exists()) {
                 int volba = JOptionPane.showConfirmDialog(null, 
                     "První spuštění: Chcete vybrat síťovou nebo jinou složku pro databázi?\n" +
-                    "(Pokud zvolíte Ne, data se budou ukládat sem k programu)", 
+                    "(Pokud zvolíte Ne, data se budou ukládat do složky s programem)", 
                     "Výběr databáze", JOptionPane.YES_NO_OPTION);
                     
                 if (volba == JOptionPane.YES_OPTION) {

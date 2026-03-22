@@ -31,11 +31,13 @@ public class PolozkaDialog extends JDialog {
         JTextField textFieldKoupeneMnozstvi = new JTextField(isEditMode ? String.valueOf(polozka.getKoupeneMnozstvi()) : "", 15);
         panel.add(textFieldKoupeneMnozstvi);
 
-        JTextField textFieldAktualniMnozstvi = null;
+        final JTextField textFieldAktualniMnozstvi;
         if (isEditMode) {
             panel.add(new JLabel("Aktuální množství:"));
             textFieldAktualniMnozstvi = new JTextField(String.valueOf(polozka.getAktualniMnozstvi()), 15);
             panel.add(textFieldAktualniMnozstvi);
+        } else {
+            textFieldAktualniMnozstvi = null;
         }
 
         panel.add(new JLabel(isEditMode ? "Jednotka:" : "Jednotka balení:"));
