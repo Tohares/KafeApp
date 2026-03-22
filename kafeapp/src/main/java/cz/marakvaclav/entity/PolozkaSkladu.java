@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.entity;
 
 import java.math.BigDecimal;
 

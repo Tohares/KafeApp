@@ -1,4 +1,7 @@
-package cz.marakvaclav;
+package cz.marakvaclav.dialogy;
+
+import cz.marakvaclav.entity.Admin;
+import cz.marakvaclav.entity.Vyuctovani;
 
 import java.awt.*;
 import javax.swing.*;
@@ -37,9 +40,6 @@ public class PlatbaDialog extends JDialog {
         JButton btnZavrit = new JButton("Zavřít");
 
         btnZaplaceno.addActionListener(e -> {
-            vyuctovani.setStavPlatby(true);
-            vyuctovani.setDatumPlatby(java.time.LocalDate.now());
-            SpravceSouboru.ulozVyuctovani(vyuctovani, admin.getLogin());
             succeeded = true;
             dispose();
         });

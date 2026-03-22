@@ -1,4 +1,6 @@
-package cz.marakvaclav;
+package cz.marakvaclav.dialogy;
+
+import cz.marakvaclav.entity.Kafar;
 
 import javax.swing.*;
 import java.awt.*;
@@ -6,9 +8,8 @@ import java.util.List;
 import java.util.Arrays;
 
 public class NewUserDialog extends JDialog {
-    private JTextField textFieldLogin;
-    private JPasswordField passwordFieldHesloFirst;
-    private JPasswordField passwordFieldHesloSecond;
+    private String login;
+    private String heslo;
     private boolean succeeded;
 
     public NewUserDialog(Frame parent, List<Kafar> kafari) {
@@ -17,15 +18,15 @@ public class NewUserDialog extends JDialog {
         JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
 
         panel.add(new JLabel("Login:"));
-        textFieldLogin = new JTextField(15);
+        JTextField textFieldLogin = new JTextField(15);
         panel.add(textFieldLogin);
 
         panel.add(new JLabel("Heslo:"));
-        passwordFieldHesloFirst = new JPasswordField(15);
+        JPasswordField passwordFieldHesloFirst = new JPasswordField(15);
         panel.add(passwordFieldHesloFirst);
 
         panel.add(new JLabel("Heslo znovu:"));
-        passwordFieldHesloSecond = new JPasswordField(15);
+        JPasswordField passwordFieldHesloSecond = new JPasswordField(15);
         panel.add(passwordFieldHesloSecond);
 
         JButton btnOk = new JButton("OK");
@@ -45,6 +46,8 @@ public class NewUserDialog extends JDialog {
                 }
             }
             succeeded = true;
+            this.login = textFieldLogin.getText();
+            this.heslo = new String(passwordFieldHesloSecond.getPassword());
             dispose(); // Zavre dialog
         });
 
@@ -64,15 +67,14 @@ public class NewUserDialog extends JDialog {
     }
 
     public String getLogin() {
-        return textFieldLogin.getText();
+        return login;
     }
 
     public String getHeslo() {
-        return new String(passwordFieldHesloSecond.getPassword());
+        return heslo;
     }
 
     public boolean isSucceeded() {
         return succeeded;
     }
 }
-

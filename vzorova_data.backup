@@ -1,0 +1,86 @@
+===KAFARI===
+admin;$2a$10$ehb.vs2Mn4DDQeZcBarIpOFV8qRoj596yKJ4FZOHvoCGk6e9kuBaW;CZ1655000000003723676956;3723676956/5500
+Pavel;$2a$10$wOe2vHh08At5m1rcJSCE5e52obeOJu27WOYaqnyQ70cCuDJCsPf9W;0
+Vaclav;$2a$10$JtSvBdNuKHj5U3vnxlscW.vudxjnesfe.5aYaf.nxg9HVgVXfFeii;0
+Honza;$2a$10$m0SWr5qhmugEY02B6QwYcuhpCQyRZ1TVP4dFKMWMTr4KxPHo3VtG2;0
+Marak;$2a$10$E1iQw0hqOAQ2fTsfxCicTec2hHYstCMiTLlu6Bvrjmiw52vFPWIM2;0
+===SKLAD===
+0;Mleko;2;0;l;26.9;CZK
+1;Mleko;8;0;l;17.9;CZK
+2;Mleko;4;0;l;16.9;CZK
+3;Mleko;5;0;l;13.9;CZK
+4;Mleko;1;0;l;12.9;CZK
+5;Mleko;5;0;l;12.9;CZK
+6;Mleko;6;0;l;9.9;CZK
+7;Mleko;4;0;l;10.9;CZK
+8;Mleko;2;0;l;10.6;CZK
+9;Mleko;2;0;l;10.9;CZK
+10;Mleko;4;0;l;10.9;CZK
+11;Mleko;2;0;l;10.9;CZK
+12;Mleko;6;0;l;10.9;CZK
+13;Mleko;4;0;l;10.9;CZK
+14;Mleko;10;0;l;10.9;CZK
+15;Mleko;2;0;l;10.9;CZK
+16;Mleko;6;0;l;12.9;CZK
+17;Mleko;6;1;l;11.9;CZK
+18;Mleko;3;3;l;11.9;CZK
+19;Mleko;2;2;l;11.9;CZK
+20;Cukr;2;0;kg;26.9;CZK
+21;Cukr;2;0;kg;17.9;CZK
+22;Cukr;2;0;kg;15.9;CZK
+23;Kafe;1;0;kg;650;CZK
+24;Kafe;1;0;kg;650;CZK
+25;Kafe;2;0;kg;650;CZK
+26;Kafe;2;0;kg;400;CZK
+27;Kafe;1;0;kg;480;CZK
+28;Kafe;2;0;kg;450;CZK
+29;Kafe;1;1;kg;450;CZK
+30;Kys. Citr.;5;0;20g;7.9;CZK
+31;Kys. Citr.;2;1;40g;22;CZK
+34;Mleko;3;3;l;11.9;CZK
+===VYUCTOVANI===
+admin;2023-05-11;122;900.8;7.38;122;900.8;true;2026-03-22;23;Kafe;1;1;kg;650;CZK;0;Mleko;2;2;l;26.9;CZK;1;Mleko;8;8;l;17.9;CZK;20;Cukr;2;2;kg;26.9;CZK
+Pavel;2023-05-11;122;900.8;7.38;3;22.14;true;2026-03-22;23;Kafe;1;1;kg;650;CZK;0;Mleko;2;2;l;26.9;CZK;1;Mleko;8;8;l;17.9;CZK;20;Cukr;2;2;kg;26.9;CZK
+Vaclav;2023-05-11;122;900.8;7.38;7;51.66;true;2026-03-22;23;Kafe;1;1;kg;650;CZK;0;Mleko;2;2;l;26.9;CZK;1;Mleko;8;8;l;17.9;CZK;20;Cukr;2;2;kg;26.9;CZK
+Honza;2023-05-11;122;900.8;7.38;14;103.32;true;2026-03-22;23;Kafe;1;1;kg;650;CZK;0;Mleko;2;2;l;26.9;CZK;1;Mleko;8;8;l;17.9;CZK;20;Cukr;2;2;kg;26.9;CZK
+Marak;2023-05-11;122;900.8;7.38;98;723.24;true;2026-03-22;23;Kafe;1;1;kg;650;CZK;0;Mleko;2;2;l;26.9;CZK;1;Mleko;8;8;l;17.9;CZK;20;Cukr;2;2;kg;26.9;CZK
+admin;2023-08-31;138;864.5;6.26;138;864.5;true;2026-03-22;24;Kafe;1;1;kg;650;CZK;2;Mleko;4;4;l;16.9;CZK;3;Mleko;5;5;l;13.9;CZK;4;Mleko;1;1;l;12.9;CZK;5;Mleko;5;5;l;12.9;CZK
+Pavel;2023-08-31;138;864.5;6.26;5;31.30;true;2026-03-22;24;Kafe;1;1;kg;650;CZK;2;Mleko;4;4;l;16.9;CZK;3;Mleko;5;5;l;13.9;CZK;4;Mleko;1;1;l;12.9;CZK;5;Mleko;5;5;l;12.9;CZK
+Vaclav;2023-08-31;138;864.5;6.26;15;93.90;true;2026-03-22;24;Kafe;1;1;kg;650;CZK;2;Mleko;4;4;l;16.9;CZK;3;Mleko;5;5;l;13.9;CZK;4;Mleko;1;1;l;12.9;CZK;5;Mleko;5;5;l;12.9;CZK
+Honza;2023-08-31;138;864.5;6.26;23;143.98;true;2026-03-22;24;Kafe;1;1;kg;650;CZK;2;Mleko;4;4;l;16.9;CZK;3;Mleko;5;5;l;13.9;CZK;4;Mleko;1;1;l;12.9;CZK;5;Mleko;5;5;l;12.9;CZK
+Marak;2023-08-31;138;864.5;6.26;95;594.70;true;2026-03-22;24;Kafe;1;1;kg;650;CZK;2;Mleko;4;4;l;16.9;CZK;3;Mleko;5;5;l;13.9;CZK;4;Mleko;1;1;l;12.9;CZK;5;Mleko;5;5;l;12.9;CZK
+admin;2023-11-23;117;709.4;6.06;117;709.4;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;6;Mleko;6;6;l;9.9;CZK
+Pavel;2023-11-23;117;709.4;6.06;9;54.54;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;6;Mleko;6;6;l;9.9;CZK
+Vaclav;2023-11-23;117;709.4;6.06;19;115.14;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;6;Mleko;6;6;l;9.9;CZK
+Honza;2023-11-23;117;709.4;6.06;27;163.62;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;6;Mleko;6;6;l;9.9;CZK
+Marak;2023-11-23;117;709.4;6.06;62;375.72;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;6;Mleko;6;6;l;9.9;CZK
+admin;2024-03-27;138;693.6;5.03;138;693.6;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;7;Mleko;4;4;l;10.9;CZK
+Vaclav;2024-03-27;138;693.6;5.03;17;85.51;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;7;Mleko;4;4;l;10.9;CZK
+Honza;2024-03-27;138;693.6;5.03;14;70.42;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;7;Mleko;4;4;l;10.9;CZK
+Marak;2024-03-27;138;693.6;5.03;107;538.21;true;2026-03-22;25;Kafe;1;1;kg;650;CZK;7;Mleko;4;4;l;10.9;CZK
+admin;2024-07-22;129;583.7;4.52;129;583.7;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;8;Mleko;2;2;l;10.6;CZK;9;Mleko;2;2;l;10.9;CZK;10;Mleko;4;4;l;10.9;CZK;11;Mleko;2;2;l;10.9;CZK;21;Cukr;2;2;kg;17.9;CZK;30;Kys. Citr.;5;5;20g;7.9;CZK
+Vaclav;2024-07-22;129;583.7;4.52;15;67.80;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;8;Mleko;2;2;l;10.6;CZK;9;Mleko;2;2;l;10.9;CZK;10;Mleko;4;4;l;10.9;CZK;11;Mleko;2;2;l;10.9;CZK;21;Cukr;2;2;kg;17.9;CZK;30;Kys. Citr.;5;5;20g;7.9;CZK
+Honza;2024-07-22;129;583.7;4.52;29;131.08;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;8;Mleko;2;2;l;10.6;CZK;9;Mleko;2;2;l;10.9;CZK;10;Mleko;4;4;l;10.9;CZK;11;Mleko;2;2;l;10.9;CZK;21;Cukr;2;2;kg;17.9;CZK;30;Kys. Citr.;5;5;20g;7.9;CZK
+Marak;2024-07-22;129;583.7;4.52;85;384.20;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;8;Mleko;2;2;l;10.6;CZK;9;Mleko;2;2;l;10.9;CZK;10;Mleko;4;4;l;10.9;CZK;11;Mleko;2;2;l;10.9;CZK;21;Cukr;2;2;kg;17.9;CZK;30;Kys. Citr.;5;5;20g;7.9;CZK
+admin;2024-11-26;132;562.6;4.26;132;562.6;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;12;Mleko;6;6;l;10.9;CZK;13;Mleko;4;4;l;10.9;CZK;14;Mleko;2;2;l;10.9;CZK;22;Cukr;2;2;kg;15.9;CZK
+Pavel;2024-11-26;132;562.6;4.26;14;59.64;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;12;Mleko;6;6;l;10.9;CZK;13;Mleko;4;4;l;10.9;CZK;14;Mleko;2;2;l;10.9;CZK;22;Cukr;2;2;kg;15.9;CZK
+Vaclav;2024-11-26;132;562.6;4.26;16;68.16;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;12;Mleko;6;6;l;10.9;CZK;13;Mleko;4;4;l;10.9;CZK;14;Mleko;2;2;l;10.9;CZK;22;Cukr;2;2;kg;15.9;CZK
+Honza;2024-11-26;132;562.6;4.26;19;80.94;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;12;Mleko;6;6;l;10.9;CZK;13;Mleko;4;4;l;10.9;CZK;14;Mleko;2;2;l;10.9;CZK;22;Cukr;2;2;kg;15.9;CZK
+Marak;2024-11-26;132;562.6;4.26;83;353.58;true;2026-03-22;26;Kafe;1;1;kg;400;CZK;12;Mleko;6;6;l;10.9;CZK;13;Mleko;4;4;l;10.9;CZK;14;Mleko;2;2;l;10.9;CZK;22;Cukr;2;2;kg;15.9;CZK
+admin;2025-03-25;124;545.4;4.40;124;545.4;true;2026-03-22;27;Kafe;1;1;kg;480;CZK;14;Mleko;6;6;l;10.9;CZK
+Pavel;2025-03-25;124;545.4;4.40;3;13.20;true;2026-03-22;27;Kafe;1;1;kg;480;CZK;14;Mleko;6;6;l;10.9;CZK
+Vaclav;2025-03-25;124;545.4;4.40;16;70.40;true;2026-03-22;27;Kafe;1;1;kg;480;CZK;14;Mleko;6;6;l;10.9;CZK
+Honza;2025-03-25;124;545.4;4.40;20;88.00;true;2026-03-22;27;Kafe;1;1;kg;480;CZK;14;Mleko;6;6;l;10.9;CZK
+Marak;2025-03-25;124;545.4;4.40;85;374.00;true;2026-03-22;27;Kafe;1;1;kg;480;CZK;14;Mleko;6;6;l;10.9;CZK
+admin;2025-08-08;135;558.1;4.13;135;558.1;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;14;Mleko;2;2;l;10.9;CZK;15;Mleko;2;2;l;10.9;CZK;16;Mleko;5;5;l;12.9;CZK
+Pavel;2025-08-08;135;558.1;4.13;8;33.04;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;14;Mleko;2;2;l;10.9;CZK;15;Mleko;2;2;l;10.9;CZK;16;Mleko;5;5;l;12.9;CZK
+Vaclav;2025-08-08;135;558.1;4.13;8;33.04;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;14;Mleko;2;2;l;10.9;CZK;15;Mleko;2;2;l;10.9;CZK;16;Mleko;5;5;l;12.9;CZK
+Honza;2025-08-08;135;558.1;4.13;18;74.34;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;14;Mleko;2;2;l;10.9;CZK;15;Mleko;2;2;l;10.9;CZK;16;Mleko;5;5;l;12.9;CZK
+Marak;2025-08-08;135;558.1;4.13;101;417.13;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;14;Mleko;2;2;l;10.9;CZK;15;Mleko;2;2;l;10.9;CZK;16;Mleko;5;5;l;12.9;CZK
+admin;2025-11-13;137;544.4;3.97;137;544.4;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;16;Mleko;1;1;l;12.9;CZK;17;Mleko;5;5;l;11.9;CZK;31;Kys. Citr.;1;1;40g;22;CZK
+Pavel;2025-11-13;137;544.4;3.97;28;111.16;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;16;Mleko;1;1;l;12.9;CZK;17;Mleko;5;5;l;11.9;CZK;31;Kys. Citr.;1;1;40g;22;CZK
+Vaclav;2025-11-13;137;544.4;3.97;20;79.40;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;16;Mleko;1;1;l;12.9;CZK;17;Mleko;5;5;l;11.9;CZK;31;Kys. Citr.;1;1;40g;22;CZK
+Honza;2025-11-13;137;544.4;3.97;7;27.79;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;16;Mleko;1;1;l;12.9;CZK;17;Mleko;5;5;l;11.9;CZK;31;Kys. Citr.;1;1;40g;22;CZK
+Marak;2025-11-13;137;544.4;3.97;82;325.54;true;2026-03-22;28;Kafe;1;1;kg;450;CZK;16;Mleko;1;1;l;12.9;CZK;17;Mleko;5;5;l;11.9;CZK;31;Kys. Citr.;1;1;40g;22;CZK
+===SIGNATURE===
+0fc0a321a495

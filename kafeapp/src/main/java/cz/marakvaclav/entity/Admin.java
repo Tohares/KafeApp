@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.entity;
 
 public class Admin extends Uzivatel {
     private String cisloUctuIBAN = null;
@@ -28,5 +28,9 @@ public class Admin extends Uzivatel {
 
     public void setCisloUctuCZ(String cisloUctu) {
         this.cisloUctuCZ = cisloUctu;
+    }
+
+    public String toCsv() {
+        return login + ";" + hesloHash + ";" + cisloUctuIBAN + ";" + cisloUctuCZ;
     }
 }

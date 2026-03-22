@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.entity;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -73,6 +73,7 @@ public class Vyuctovani {
     }
 
     public BufferedImage vytvorQRKodProPlatbu(Admin admin) {
+        // Sestavení platebního řetězce podle českého bankovního standardu SPAYD (Short Payment Descriptor)
         String messageQR = "SPD*1.0*ACC:" + admin.getCisloUctuIBAN() + 
                            "*AM:" + cenaZaVypiteKavy.setScale(2, RoundingMode.HALF_UP).toPlainString() + 
                            "*CC:CZK*MSG:KAFE-" + login + 
@@ -194,5 +195,3 @@ public class Vyuctovani {
     }
 
 }
-
-

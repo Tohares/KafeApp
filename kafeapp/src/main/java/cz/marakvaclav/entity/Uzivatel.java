@@ -1,8 +1,10 @@
-package cz.marakvaclav;
+package cz.marakvaclav.entity;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+
+import org.mindrot.jbcrypt.BCrypt;
 
 public class Uzivatel {
     protected String login;
@@ -19,16 +21,15 @@ public class Uzivatel {
     public void setHeslo(String heslo) { hesloHash = hashHeslo(heslo); }
     public void setHesloHash(String hesloHash) { this.hesloHash = hesloHash; }
 
-
-
     public static String hashHeslo(String heslo) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(heslo.getBytes());
-            return HexFormat.of().formatHex(hashBytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Chyba: Algoritmus SHA-256 nebyl nalezen!");
+        return BCrypt.hashpw(heslo, BCrypt.gensalt());
+    }
+
+    public static boolean overHeslo(String zadaneHeslo, String ulozenyHash) {
+        if (ulozenyHash != null && ulozenyHash.startsWith("$2a$")) {
+            return BCrypt.checkpw(zadaneHeslo, ulozenyHash);
         }
+        return false;
     }
 
     public static String checkSum(String line) {

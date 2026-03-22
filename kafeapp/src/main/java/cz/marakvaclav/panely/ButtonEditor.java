@@ -1,9 +1,10 @@
-package cz.marakvaclav;
+package cz.marakvaclav.panely;
+
+import cz.marakvaclav.entity.Vyuctovani;
+import cz.marakvaclav.sluzby.KafeGui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 public class ButtonEditor extends DefaultCellEditor {
     protected JButton button;

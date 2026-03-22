@@ -1,8 +1,9 @@
-package cz.marakvaclav;
+package cz.marakvaclav.dialogy;
+
+import cz.marakvaclav.entity.Vyuctovani;
 
 import java.awt.*;
 import java.util.List;
-
 import javax.swing.*;
 
 public class ExportHistorieKafareDialog extends JDialog{
@@ -18,7 +19,7 @@ public class ExportHistorieKafareDialog extends JDialog{
 
         StringBuilder sbVzhled = new StringBuilder();
         sbVzhled.append(String.format("%-12s | %-10s | %-10s | %-10s | %-6s | %-10s\n", 
-                            "Datum", "PocetKav", "Cena/ks", "Celkem", "Mena", "Zaplaceno"));
+                            "Datum", "Počet káv", "Cena/ks", "Celkem", "Měna", "Zaplaceno"));
         sbVzhled.append("----------------------------------------------------------------------\n");
 
         for (Vyuctovani v : historie) {

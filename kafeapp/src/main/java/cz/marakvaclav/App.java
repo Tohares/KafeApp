@@ -1,53 +1,53 @@
 package cz.marakvaclav;
 
-import javax.swing.SwingUtilities;
+import cz.marakvaclav.sluzby.KafeController;
+import cz.marakvaclav.sluzby.KafeGui;
+import cz.marakvaclav.sluzby.SpravceSouboru;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.swing.SwingUtilities;
+import javax.swing.JOptionPane;
+import javax.swing.JFileChooser;
 
 public class App 
 {
     public static void main( String[] args )
     {
-        System.out.println( "Vitejte v KafeApp" );
+        System.out.println( "Vítejte v KafeApp" );
         
-        Admin admin = new Admin("admin", "adminheslo", "CZ1655000000003723676956", "3723676956/5500");
-        
-        final List<Kafar> kafari;
-        List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
-        if (nacteniKafaru == null) {
-            kafari = new ArrayList<>();
-        }
-        else {
-            kafari = nacteniKafaru;
-        }
-
-        final List<PolozkaSkladu> sklad;
-        List<PolozkaSkladu> nacteniSkladu = SpravceSouboru.nactiSklad();
-        if (nacteniSkladu == null) {
-            sklad = new ArrayList<>();
-        }
-        else {
-            sklad = nacteniSkladu;
-        }
-
-        final List<Vyuctovani> seznamVyuctovani;
-        List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
-        if (nacteniVyuctovani == null) {
-            seznamVyuctovani = new ArrayList<>();
-        }
-        else {
-            seznamVyuctovani = nacteniVyuctovani;
-        }
+        SwingUtilities.invokeLater(() -> {
+            SpravceSouboru.nactiKonfiguraci();
+            
+            java.io.File configFile = new java.io.File("kafeapp.properties");
+            if (!configFile.exists()) {
+                int volba = JOptionPane.showConfirmDialog(null, 
+                    "První spuštění: Chcete vybrat síťovou nebo jinou složku pro databázi?\n" +
+                    "(Pokud zvolíte Ne, data se budou ukládat sem k programu)", 
+                    "Výběr databáze", JOptionPane.YES_NO_OPTION);
                     
-        SwingUtilities.invokeLater(() -> new KafeGui(kafari, sklad, seznamVyuctovani, admin));
-
-        if (kafari.isEmpty()) {
-            System.out.println("Seznam kafaru je prazdny.");
-        } else {
-            for (Kafar k : kafari) {
-                System.out.println("Nacten uzivatel: " + k.getLogin() + " (kav: " + k.getPocetVypitychKav() + ")");
+                if (volba == JOptionPane.YES_OPTION) {
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    chooser.setDialogTitle("Vyberte složku pro ukládání dat (CSV)");
+                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                        SpravceSouboru.setPracovniSlozka(chooser.getSelectedFile().getAbsolutePath());
+                    } else {
+                        SpravceSouboru.ulozKonfiguraci(); // Uloží výchozí nastavení, ať už se příště neptá
+                    }
+                } else {
+                    SpravceSouboru.ulozKonfiguraci(); // Uživatel zvolil Ne
+                }
             }
-        }     
+
+            KafeController controller = new KafeController();
+            if (!controller.inicializujAplikaci()) {
+                System.out.println("Založení administrátora bylo zrušeno. Aplikace se ukončí.");
+                System.exit(0);
+                return;
+            }
+            
+            KafeGui gui = new KafeGui(controller);
+            controller.setGui(gui);
+
+        });
     }
 }

@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.entity;
 
 public class Kafar extends Uzivatel {
     private int pocetVypitychKav;
@@ -22,9 +22,7 @@ public class Kafar extends Uzivatel {
     }
 
     public String toCsv() {
-        String data = login + ";" + hesloHash + ";" + pocetVypitychKav;
-        String checkSum = Uzivatel.checkSum(data);
-        return data + ";" + checkSum;
+        return login + ";" + hesloHash + ";" + pocetVypitychKav;
     }
 
     public void zaplatit() {

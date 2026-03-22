@@ -2,3 +2,11 @@
 *.class
 .settings/
 .project
+
+# Lokální databáze (data, zámky, podpisy a logy)
+*.csv
+*.csv.tmp
+*.lock
+*.sig
+*.log
+*.properties

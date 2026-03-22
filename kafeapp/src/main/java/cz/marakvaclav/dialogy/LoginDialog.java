@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.dialogy;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,7 +9,7 @@ public class LoginDialog extends JDialog {
     private boolean succeeded;
 
     public LoginDialog(Frame parent) {
-        super(parent, "Prihlaseni", true); // true nastavuje modalitu
+        super(parent, "Přihlášení", true); // true nastavuje modalitu
         
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
 
@@ -23,6 +23,8 @@ public class LoginDialog extends JDialog {
 
         JButton btnOk = new JButton("OK");
         JButton btnStorno = new JButton("Storno");
+
+        getRootPane().setDefaultButton(btnOk);
 
         btnOk.addActionListener(e -> {
             succeeded = true;

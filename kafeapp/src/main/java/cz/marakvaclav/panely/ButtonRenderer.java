@@ -1,4 +1,4 @@
-package cz.marakvaclav;
+package cz.marakvaclav.panely;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
