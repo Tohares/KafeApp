@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.math.BigDecimal;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KafeController {
     private List<Kafar> kafari;
@@ -16,36 +21,69 @@ public class KafeController {
     private String prihlasenyUzivatel = null;
     private KafeGui gui;
 
+    // Jednovláknový exekutor garantuje, že se síťové zápisy řadí za sebe, neblokují UI a neperou se o zámky (Optimistic UI)
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+    // Počítadlo běžících I/O operací pro zajištění bezpečného ukončení (aby se aplikace nezavřela během zápisu)
+    private final AtomicInteger pocetAktivnichZapisov = new AtomicInteger(0);
+    private boolean cekaNaUkonceni = false;
+
     public KafeController() {
     }
 
     public boolean inicializujAplikaci() {
-        admin = SpravceSouboru.nactiAdmina();
-        if (admin == null) {
-            VytvoreniAdminaDialog dialog = new VytvoreniAdminaDialog(null);
-            dialog.setVisible(true);
-            if (dialog.isSucceeded()) {
-                admin = dialog.getAdmin();
-                SpravceSouboru.ulozAdmina(admin, admin.getLogin());
-            } else {
-                return false;
-            }
-        }
-
-        List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
-        kafari = (nacteniKafaru == null) ? new ArrayList<>() : nacteniKafaru;
-
-        List<PolozkaSkladu> nacteniSkladu = SpravceSouboru.nactiSklad();
-        sklad = (nacteniSkladu == null) ? new ArrayList<>() : nacteniSkladu;
-
-        List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
-        seznamVyuctovani = (nacteniVyuctovani == null) ? new ArrayList<>() : nacteniVyuctovani;
+        // Rychlá inicializace prázdných datových struktur.
+        // Skutečné síťové čtení se odstartuje asynchronně metodou spustNacitaniDat(), aby grafické UI naběhlo okamžitě.
+        kafari = new ArrayList<>();
+        sklad = new ArrayList<>();
+        seznamVyuctovani = new ArrayList<>();
         
         return true;
     }
 
     public void setGui(KafeGui gui) {
         this.gui = gui;
+        spustNacitaniDat();
+    }
+
+    public void spustNacitaniDat() {
+        if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavStavNacitani(true));
+        
+        ioExecutor.submit(() -> {
+            Admin tempAdmin = SpravceSouboru.nactiAdmina();
+            if (tempAdmin == null) {
+                try {
+                    // Vytvoření uživatele vyžaduje grafický dialog, proto se toto výjimečně hodí zpět do hlavního vlákna
+                    javax.swing.SwingUtilities.invokeAndWait(() -> {
+                        VytvoreniAdminaDialog dialog = new VytvoreniAdminaDialog(gui);
+                        dialog.setVisible(true);
+                        if (dialog.isSucceeded()) {
+                            admin = dialog.getAdmin();
+                            SpravceSouboru.ulozAdmina(admin, admin.getLogin());
+                        } else {
+                            System.exit(0);
+                        }
+                    });
+                } catch (Exception e) {}
+            } else {
+                admin = tempAdmin;
+            }
+
+            List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
+            kafari = (nacteniKafaru == null) ? new ArrayList<>() : nacteniKafaru;
+
+            List<PolozkaSkladu> nacteniSkladu = SpravceSouboru.nactiSklad();
+            sklad = (nacteniSkladu == null) ? new ArrayList<>() : nacteniSkladu;
+
+            List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
+            seznamVyuctovani = (nacteniVyuctovani == null) ? new ArrayList<>() : nacteniVyuctovani;
+            
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                if (gui != null) {
+                    gui.nastavStavNacitani(false);
+                    gui.zobrazChybyIntegrity();
+                }
+            });
+        });
     }
 
     public List<Kafar> getKafari() { return kafari; }
@@ -95,11 +133,7 @@ public class KafeController {
             SpravceSouboru.setPracovniSlozka(novaSlozka);
             SpravceSouboru.chybyIntegrity.clear();
             odhlasit(); 
-            if (!inicializujAplikaci()) {
-                System.exit(0);
-            }
-            gui.zobrazChybyIntegrity();
-            gui.updateView();
+            spustNacitaniDat();
         }
     }
 
@@ -127,11 +161,44 @@ public class KafeController {
         return false;
     }
 
+    public void provedZapisNaPozadi(Runnable uloha) {
+        pocetAktivnichZapisov.incrementAndGet();
+        // Zobrazí varovný červený pruh upozorňující na probíhající síťovou komunikaci
+        if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavViditelnostZapisovani(true));
+        
+        ioExecutor.submit(() -> {
+            try {
+                uloha.run();
+            } finally {
+                if (pocetAktivnichZapisov.decrementAndGet() == 0) {
+                    if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavViditelnostZapisovani(false));
+                    // Pokud uživatel kliknul na křížek během ukládání, aplikace se po dokončení zápisu sama vypne
+                    if (cekaNaUkonceni) {
+                        System.exit(0);
+                    }
+                }
+            }
+        });
+    }
+
+    public void ukonceniAplikace() {
+        // Pokud probíhá zápis na pozadí, zablokujeme okamžité zabití procesu, čímž předejdeme poškození datových souborů na síti
+        if (pocetAktivnichZapisov.get() > 0) {
+            cekaNaUkonceni = true;
+            if (gui != null) {
+                gui.zobrazInformaci("Aplikace právě ukládá data na síťový disk.\nVyčkejte prosím, po dokončení operace se zavře sama.");
+            }
+        } else {
+            ioExecutor.shutdown();
+            System.exit(0);
+        }
+    }
+
     public void vypitKavu() {
         for (Kafar k : kafari) {
             if (k.getLogin().equals(prihlasenyUzivatel)) {
                 k.vypijKavu();
-                SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
+                provedZapisNaPozadi(() -> SpravceSouboru.ulozKafare(k, prihlasenyUzivatel));
                 if (gui != null) gui.updateView();
                 break;
             }
@@ -142,7 +209,8 @@ public class KafeController {
         for (Kafar k : kafari) {
             if (k.getLogin().equals(login)) {
                 k.setPocetVypitychKav(novyPocet);
-                SpravceSouboru.ulozKafare(k, prihlasenyUzivatel);
+                // Odkopnutí pomalého síťového I/O zápisu na pozadí, tabulka se ihned uvolní
+                provedZapisNaPozadi(() -> SpravceSouboru.ulozKafare(k, prihlasenyUzivatel));
                 break;
             }
         }
@@ -360,5 +428,115 @@ public class KafeController {
         SpravceSouboru.prepisVsechnaVyuctovani(seznamVyuctovani, prihlasenyUzivatel);
         
         return true;
+    }
+
+    public void importDatZeZalohy(File file, boolean isNuclear) throws Exception {
+        // Nahrání celého obsahu s normalizací konců řádků (Windows vs Linux formát)
+        String content = Files.readString(file.toPath()).replace("\r\n", "\n");
+        int sigIndex = content.indexOf("===SIGNATURE===\n");
+        if (sigIndex == -1) throw new Exception("Soubor neobsahuje platný podpis zálohy.");
+        
+        // Rozdělení obsahu na čistá data a samotný kontrolní hash pro účely ověření integrity
+        String dataToHash = content.substring(0, sigIndex);
+        String signatureInFile = content.substring(sigIndex + 16).trim();
+        
+        if (!Uzivatel.checkSum(dataToHash).equals(signatureInFile)) {
+            throw new Exception("Podpis souboru nesouhlasí! Data byla poškozena nebo upravena.");
+        }
+        
+        List<Kafar> impKafari = new ArrayList<>();
+        List<PolozkaSkladu> impSklad = new ArrayList<>();
+        List<Vyuctovani> impVyuctovani = new ArrayList<>();
+        Admin impAdmin = null;
+        
+        int section = 0; // 1=KAFARI, 2=SKLAD, 3=VYUCTOVANI
+        for (String line : dataToHash.split("\n")) {
+            if (line.equals("===KAFARI===")) { section = 1; continue; }
+            if (line.equals("===SKLAD===")) { section = 2; continue; }
+            if (line.equals("===VYUCTOVANI===")) { section = 3; continue; }
+            if (line.trim().isEmpty()) continue;
+            
+            String[] parts = line.split(";");
+            if (section == 1 && parts.length >= 3) {
+                try {
+                    int pocet = Integer.parseInt(parts[2]);
+                    Kafar k = new Kafar(parts[0], "");
+                    k.setHesloHash(parts[1]);
+                    k.setPocetVypitychKav(pocet);
+                    impKafari.add(k);
+                } catch (NumberFormatException e) {
+                    if (parts.length >= 4) {
+                        Admin a = new Admin(parts[0], "");
+                        a.setHesloHash(parts[1]);
+                        a.setCisloUctuIBAN(parts[2]);
+                        a.setCisloUctuCZ(parts[3]);
+                        impAdmin = a;
+                    }
+                }
+            } else if (section == 2 && parts.length == 7) {
+                impSklad.add(new PolozkaSkladu(Integer.parseInt(parts[0]), parts[1], Integer.parseInt(parts[2]), 
+                    Integer.parseInt(parts[3]), parts[4], new BigDecimal(parts[5]), parts[6]));
+            } else if (section == 3 && parts.length > 10) {
+                Vyuctovani v = new Vyuctovani();
+                v.fromCsv(parts);
+                impVyuctovani.add(v);
+            }
+        }
+        
+        if (isNuclear) {
+            SpravceSouboru.smazVsechnaData(prihlasenyUzivatel);
+            kafari.clear(); kafari.addAll(impKafari);
+            sklad.clear(); sklad.addAll(impSklad);
+            seznamVyuctovani.clear(); seznamVyuctovani.addAll(impVyuctovani);
+            if (impAdmin != null) {
+                admin.setLogin(impAdmin.getLogin());
+                admin.setHesloHash(impAdmin.getHesloHash());
+                admin.setCisloUctuIBAN(impAdmin.getCisloUctuIBAN());
+                admin.setCisloUctuCZ(impAdmin.getCisloUctuCZ());
+            }
+        } else {
+            // Chytré sloučení (Merge)
+            for (Kafar ik : impKafari) {
+                boolean found = false;
+                for (Kafar ck : kafari) {
+                    if (ck.getLogin().equals(ik.getLogin())) {
+                        ck.setPocetVypitychKav(Math.max(ck.getPocetVypitychKav(), ik.getPocetVypitychKav()));
+                        found = true; break;
+                    }
+                }
+                if (!found) kafari.add(ik);
+            }
+            for (PolozkaSkladu is : impSklad) {
+                boolean found = false;
+                for (PolozkaSkladu cs : sklad) {
+                    if (cs.getNazev().equals(is.getNazev()) && cs.getJednotka().equals(is.getJednotka())) {
+                        cs.setKoupeneMnozstvi(cs.getKoupeneMnozstvi() + is.getKoupeneMnozstvi());
+                        cs.setAktualniMnozstvi(cs.getAktualniMnozstvi() + is.getAktualniMnozstvi());
+                        found = true; break;
+                    }
+                }
+                if (!found) sklad.add(is);
+            }
+            for (Vyuctovani iv : impVyuctovani) {
+                boolean found = false;
+                for (Vyuctovani cv : seznamVyuctovani) {
+                    if (cv.getLogin().equals(iv.getLogin()) && cv.getDatumVystaveni().equals(iv.getDatumVystaveni()) && (cv.getCenaZaVypiteKavy() != null && iv.getCenaZaVypiteKavy() != null && cv.getCenaZaVypiteKavy().compareTo(iv.getCenaZaVypiteKavy()) == 0)) {
+                        found = true; break;
+                    }
+                }
+                if (!found) seznamVyuctovani.add(iv);
+            }
+            if (impAdmin != null) {
+                admin.setLogin(impAdmin.getLogin());
+                admin.setHesloHash(impAdmin.getHesloHash());
+                admin.setCisloUctuIBAN(impAdmin.getCisloUctuIBAN());
+                admin.setCisloUctuCZ(impAdmin.getCisloUctuCZ());
+            }
+        }
+        
+        // Hromadný zápis - provede přepis celých tabulek najednou. Drasticky urychluje import u pomalých síťových disků.
+        SpravceSouboru.prepisVsechnyUzivatele(kafari, admin, prihlasenyUzivatel);
+        SpravceSouboru.prepisCelySklad(sklad, prihlasenyUzivatel);
+        SpravceSouboru.prepisVsechnaVyuctovani(seznamVyuctovani, prihlasenyUzivatel);
     }
 }

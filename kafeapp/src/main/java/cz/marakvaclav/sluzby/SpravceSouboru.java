@@ -30,6 +30,14 @@ public class SpravceSouboru {
 
     private static String pracovniSlozka = "";
 
+    private static String cachedHostName = "unknown";
+    // Cachování názvu PC. Volání getHostName() může na některých sítích trvat sekundy a zablokovat EDT (grafické) vlákno
+    static {
+        try {
+            cachedHostName = InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {}
+    }
+
     public static void setPracovniSlozka(String slozka) {
         pracovniSlozka = slozka;
         ulozKonfiguraci();
@@ -188,6 +196,31 @@ public class SpravceSouboru {
         return null;
     }
 
+    public static void prepisVsechnyUzivatele(List<Kafar> kafari, Admin admin, String prihlasenyUzivatel) {
+        if (!ziskejZamek(SOUBOR_LOCK_KAFARI, prihlasenyUzivatel)) {
+            System.err.println("Soubor " + SOUBOR_DAT_KAFARI + " je blokován.");
+            return;
+        }
+        try {
+            List<String> radky = new ArrayList<>();
+            if (admin != null) {
+                radky.add(admin.toCsv());
+            }
+            for (Kafar k : kafari) {
+                radky.add(k.toCsv());
+            }
+            Path cestaTMP = getCesta(SOUBOR_TMP_KAFARI);
+            Files.write(cestaTMP, radky);
+            Path cestaKDatum = getCesta(SOUBOR_DAT_KAFARI);
+            Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            podepisSoubor(cestaKDatum, SOUBOR_DAT_KAFARI + ".sig");
+        } catch (IOException e) {
+            System.err.println("Chyba při přepisu kafařů: " + e.getMessage());
+        } finally {
+            uvolniZamek(SOUBOR_LOCK_KAFARI);
+        }
+    }
+
     public static void ulozPolozkuNaSklad(PolozkaSkladu polozka, String prihlasenyUzivatel) {
         aktualizujNeboPridejRadek(SOUBOR_DAT_SKLAD, SOUBOR_TMP_SKLAD, SOUBOR_LOCK_SKLAD, prihlasenyUzivatel, polozka.getId() + ";", polozka.toCsv());
     }
@@ -326,12 +359,14 @@ public class SpravceSouboru {
             }
             if (!Files.exists(lockPath)) {
                 Files.createFile(lockPath);
-                String lockOwnerInfo = System.getProperty("user.name") + "@" + InetAddress.getLocalHost().getHostName() + 
+                String lockOwnerInfo = System.getProperty("user.name") + "@" + cachedHostName + 
                     " user: " + prihlasenyUzivatel + " @" + System.currentTimeMillis();
                 Files.writeString(lockPath, lockOwnerInfo);
                 return true;
             }
-        } catch (Exception e) {} // Používá se Exception pro zachycení i chyby číselného formátu u Long.parseLong
+        } catch (Exception e) {
+            System.err.println("Nepodařilo se získat zámek " + nazevZamekSouboru + ": " + e.getMessage());
+        } // Používá se Exception pro zachycení i chyby číselného formátu u Long.parseLong
         return false;
     }
 

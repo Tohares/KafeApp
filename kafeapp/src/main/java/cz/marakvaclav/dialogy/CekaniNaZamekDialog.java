@@ -10,6 +10,7 @@ public class CekaniNaZamekDialog extends JDialog {
     public CekaniNaZamekDialog(Supplier<Boolean> pokusZiskatZamek) {
         super((java.awt.Frame)null, "Čekání na uvolnění dat", true);
         setLayout(new BorderLayout(10, 10));
+        setAlwaysOnTop(true);
         
         final int MAX_CEKANI_SEKUND = 10;
         JLabel label = new JLabel("Data právě zpracovává jiný proces. Čekám... " + MAX_CEKANI_SEKUND + " s", SwingConstants.CENTER);

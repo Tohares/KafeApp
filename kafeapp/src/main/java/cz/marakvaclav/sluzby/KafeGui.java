@@ -39,17 +39,24 @@ public class KafeGui extends JFrame {
     private JMenuItem menuItemZmenitHeslo;
     private JMenuItem menuItemExportZalohy;
     private JMenuItem menuItemImportZalohy;
+    private JPanel panelUpozorneniZapis;
+    private boolean nacitaSe = false;
 
     public KafeGui(KafeController controller) {
         this.controller = controller;
         
         setTitle("KafeApp");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Místo okamžitého zabití přesměruje zavření okna na Controller, který zkontroluje probíhající zápisy na disk
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                controller.ukonceniAplikace();
+            }
+        });
         setSize(1024,768);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
-
-        zobrazChybyIntegrity();
 
         kafariPanel = new KafariPanel();
         kafariPanel.getTableModel().addTableModelListener(e -> {
@@ -90,7 +97,7 @@ public class KafeGui extends JFrame {
                 if (selectedRow != -1) {
                     int modelRow = uctenkyPanel.getTable().convertRowIndexToModel(selectedRow);
                     String loginTab = uctenkyPanel.getTableModel().getValueAt(modelRow, 0).toString();
-                    stornovatVyuctovaniButton.setEnabled(loginTab.equals(controller.getAdmin().getLogin()));
+                    stornovatVyuctovaniButton.setEnabled(controller.getAdmin() != null && loginTab.equals(controller.getAdmin().getLogin()));
                 } else {
                     stornovatVyuctovaniButton.setEnabled(false);
                 }
@@ -164,7 +171,19 @@ public class KafeGui extends JFrame {
         panelTlacitekAdmina.add(stornovatVyuctovaniButton);
         panelTlacitekAdmina.add(uctenkyButton);
 
-        add(panelTlacitekAdmina, BorderLayout.NORTH);
+        JPanel topContainer = new JPanel(new BorderLayout());
+        
+        panelUpozorneniZapis = new JPanel();
+        panelUpozorneniZapis.setBackground(new Color(220, 53, 69)); // tmavě červená
+        JLabel upozorneniLabel = new JLabel("Provedené změny se právě ukládají na disk, neukončujte prosím aplikaci...");
+        upozorneniLabel.setForeground(Color.WHITE);
+        upozorneniLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        panelUpozorneniZapis.add(upozorneniLabel);
+        panelUpozorneniZapis.setVisible(false);
+        
+        topContainer.add(panelUpozorneniZapis, BorderLayout.NORTH);
+        topContainer.add(panelTlacitekAdmina, BorderLayout.CENTER);
+        add(topContainer, BorderLayout.NORTH);
 
         vytvorMenu();
 
@@ -186,7 +205,7 @@ public class KafeGui extends JFrame {
         menuItemOdhlasit.addActionListener(e -> akceOdhlasit());
         menuItemZmenitHeslo.addActionListener(e -> akceZmenitHeslo());
         menuItemPrepnoutDatabazi.addActionListener(e -> controller.prepnoutDatabazi());
-        menuItemKonec.addActionListener(e -> System.exit(0));
+        menuItemKonec.addActionListener(e -> controller.ukonceniAplikace());
 
         menuSoubor.add(menuItemPrihlasit);
         menuSoubor.add(menuItemOdhlasit);
@@ -218,6 +237,11 @@ public class KafeGui extends JFrame {
         setJMenuBar(menuBar);
     }
 
+    public void nastavStavNacitani(boolean nacitam) {
+        this.nacitaSe = nacitam;
+        updateView();
+    }
+
     public void zobrazChybyIntegrity() {
         if (!SpravceSouboru.chybyIntegrity.isEmpty()) {
             String message = String.join("\n", SpravceSouboru.chybyIntegrity);
@@ -226,6 +250,10 @@ public class KafeGui extends JFrame {
                 "Kritická chyba dat", 
                 JOptionPane.WARNING_MESSAGE);
         }
+    }
+
+    public void nastavViditelnostZapisovani(boolean viditelne) {
+        panelUpozorneniZapis.setVisible(viditelne);
     }
 
     public void zobrazChybu(String zprava) {
@@ -425,41 +453,68 @@ public class KafeGui extends JFrame {
 
     public void updateView() {
         emptyPanel.removeAll();
-        String prihlasenyUzivatel = controller.getPrihlasenyUzivatel();
-
-        if (prihlasenyUzivatel == null) {
-            emptyPanel.add(welcomePanel);
-            setButtonsVisible(false, false, false, false, true, true, false, false, false, false, false, false, false);
-        } else if (controller.isAdmin()) {
-            setButtonsVisible(true, false, true, true, false, true, true, true, true, true, true, true, false);
-        }
-        else {
-            int[] stat = controller.getStatistikyPrihlasenehoKafare();
-            uctenkyPanel.obnovData(controller.getSeznamVyuctovani(), prihlasenyUzivatel);
-
-            JPanel uctenkySekce = new JPanel(new BorderLayout(0, 5));
-            JLabel nadpisUctenky = new JLabel("Historie vyúčtování a platby");
-            nadpisUctenky.setFont(new Font("Arial", Font.BOLD, 18));
-            nadpisUctenky.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 0));
-            uctenkySekce.add(nadpisUctenky, BorderLayout.NORTH);
-            uctenkySekce.add(uctenkyPanel, BorderLayout.CENTER);
-
-            userPanel.obnovData(prihlasenyUzivatel, stat[0], stat[1], stat[2]);
+        if (nacitaSe) {
+            JPanel loadingPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.insets = new Insets(10, 10, 10, 10);
             
-            JPanel souhrnyPanel = new JPanel(new GridLayout(2, 1, 0, 10));
-            souhrnyPanel.add(userPanel);
-            souhrnyPanel.add(uctenkySekce);
-            emptyPanel.add(souhrnyPanel);
+            JLabel loadingLabel = new JLabel("Načítám data ze sítě, čekejte prosím...");
+            loadingLabel.setFont(new Font("Arial", Font.BOLD, 18));
+            loadingPanel.add(loadingLabel, gbc);
+            
+            gbc.gridy = 1;
+            JProgressBar progressBar = new JProgressBar();
+            progressBar.setIndeterminate(true);
+            progressBar.setPreferredSize(new Dimension(300, 20));
+            loadingPanel.add(progressBar, gbc);
+            
+            emptyPanel.add(loadingPanel);
+            
+            setButtonsVisible(false, false, false, false, false, false, false, false, false, false, false, false, false);
+            menuItemPrihlasit.setVisible(false);
+            menuItemOdhlasit.setVisible(false);
+            menuItemZmenitHeslo.setVisible(false);
+            menuItemExportZalohy.setVisible(false);
+            menuItemImportZalohy.setVisible(false);
+        } else {
+            String prihlasenyUzivatel = controller.getPrihlasenyUzivatel();
 
-            setButtonsVisible(false, true, true, true, false, false, false, false, false, false, false, false, true);
+            if (prihlasenyUzivatel == null) {
+                emptyPanel.add(welcomePanel);
+                setButtonsVisible(false, false, false, false, true, true, false, false, false, false, false, false, false);
+            } else if (controller.isAdmin()) {
+                setButtonsVisible(true, false, true, true, false, true, true, true, true, true, true, true, false);
+            }
+            else {
+                int[] stat = controller.getStatistikyPrihlasenehoKafare();
+                uctenkyPanel.obnovData(controller.getSeznamVyuctovani(), prihlasenyUzivatel);
+
+                JPanel uctenkySekce = new JPanel(new BorderLayout(0, 5));
+                JLabel nadpisUctenky = new JLabel("Historie vyúčtování a platby");
+                nadpisUctenky.setFont(new Font("Arial", Font.BOLD, 18));
+                nadpisUctenky.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 0));
+                uctenkySekce.add(nadpisUctenky, BorderLayout.NORTH);
+                uctenkySekce.add(uctenkyPanel, BorderLayout.CENTER);
+
+                userPanel.obnovData(prihlasenyUzivatel, stat[0], stat[1], stat[2]);
+                
+                JPanel souhrnyPanel = new JPanel(new GridLayout(2, 1, 0, 10));
+                souhrnyPanel.add(userPanel);
+                souhrnyPanel.add(uctenkySekce);
+                emptyPanel.add(souhrnyPanel);
+
+                setButtonsVisible(false, true, true, true, false, false, false, false, false, false, false, false, true);
+            }
+            
+            // Aktualizace viditelnosti položek v horním menu
+            menuItemPrihlasit.setVisible(prihlasenyUzivatel == null);
+            menuItemOdhlasit.setVisible(prihlasenyUzivatel != null);
+            menuItemZmenitHeslo.setVisible(prihlasenyUzivatel != null);
+            menuItemExportZalohy.setVisible(controller.isAdmin());
+            menuItemImportZalohy.setVisible(controller.isAdmin());
         }
-        
-        // Aktualizace viditelnosti položek v horním menu
-        menuItemPrihlasit.setVisible(prihlasenyUzivatel == null);
-        menuItemOdhlasit.setVisible(prihlasenyUzivatel != null);
-        menuItemZmenitHeslo.setVisible(prihlasenyUzivatel != null);
-        menuItemExportZalohy.setVisible(controller.isAdmin());
-        menuItemImportZalohy.setVisible(controller.isAdmin());
         
         emptyPanel.revalidate();
         emptyPanel.repaint();
@@ -480,7 +535,7 @@ public class KafeGui extends JFrame {
                 String login = t.getModel().getValueAt(modelRow, 0).toString();
 
                 // Pokud se jedná o první sloupec (Jméno) a login NENÍ admin, provede se odsazení
-                if (c == 0 && !login.equals(controller.getAdmin().getLogin())) {
+                if (c == 0 && controller.getAdmin() != null && !login.equals(controller.getAdmin().getLogin())) {
                     setBorder(indentedMargin);
                 } else {
                     setBorder(standardMargin);
