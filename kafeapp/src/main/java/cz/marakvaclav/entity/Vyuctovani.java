@@ -11,6 +11,11 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+/**
+ * Entita reprezentující záznam o vyúčtování. Může nabývat dvou významů:
+ * 1. Globální (hlavní) vyúčtování: Patří adminovi, obsahuje seznam spotřebovaných surovin a celkovou útratu za dané období.
+ * 2. Osobní vyúčtování: Patří konkrétnímu kafaři, sdílí datum hlavního vyúčtování a udává dlužnou částku uživatele.
+ */
 public class Vyuctovani {
     List<PolozkaSkladu> spotrebovanePolozky = null;
     String login = null;
@@ -72,6 +77,7 @@ public class Vyuctovani {
         return sb.toString();
     }
 
+    // Vygeneruje QR kód pro mobilní bankovnictví na základě standardu SPAYD (Short Payment Descriptor)
     public BufferedImage vytvorQRKodProPlatbu(Admin admin) {
         // Sestavení platebního řetězce podle českého bankovního standardu SPAYD (Short Payment Descriptor)
         String messageQR = "SPD*1.0*ACC:" + admin.getCisloUctuIBAN() + 

@@ -3,6 +3,10 @@ package cz.marakvaclav.dialogy;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Standardní přihlašovací dialog aplikace.
+ * Slouží k bezpečnému získání přihlašovacího jména a hesla od uživatele pro ověření vůči databázi.
+ */
 public class LoginDialog extends JDialog {
     private JTextField textFieldLogin;
     private JPasswordField passwordFieldHeslo;

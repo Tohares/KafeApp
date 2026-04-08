@@ -1,5 +1,9 @@
 package cz.marakvaclav.entity;
 
+/**
+ * Entita reprezentující běžného uživatele (kafaře).
+ * Udržuje si stav svého aktuálního "dluhu" v podobě počtu vypitých a dosud nevyúčtovaných káv.
+ */
 public class Kafar extends Uzivatel {
     private int pocetVypitychKav;
 

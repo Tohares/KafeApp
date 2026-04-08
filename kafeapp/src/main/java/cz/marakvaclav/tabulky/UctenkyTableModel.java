@@ -2,6 +2,11 @@ package cz.marakvaclav.tabulky;
 
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Datový model pro zobrazení seznamu vyúčtování (účtenek).
+ * Definuje datové typy jednotlivých sloupců pro jejich správné grafické formátování 
+ * a omezuje editaci pouze na interaktivní sloupec pro potvrzení platby.
+ */
 public class UctenkyTableModel extends DefaultTableModel {
     private static final String[] SLOUPCE = {"Kafař", "Počet káv", "Datum", "Cena jedné kávy", "Cena celkem", "Uhrazeno"};
 

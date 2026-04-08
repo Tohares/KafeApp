@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// Hlavní kontroler aplikace. Propojuje uživatelské rozhraní (GUI) s datovou vrstvou (SpravceSouboru) a udržuje stav aplikace v paměti.
 public class KafeController {
     private List<Kafar> kafari;
     private List<PolozkaSkladu> sklad;
@@ -45,6 +46,7 @@ public class KafeController {
         spustNacitaniDat();
     }
 
+    // Asynchronně načte veškerá data (uživatele, sklad, účtenky) přes SpravceSouboru, aby neblokoval GUI
     public void spustNacitaniDat() {
         if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavStavNacitani(true));
         
@@ -92,10 +94,12 @@ public class KafeController {
     public Admin getAdmin() { return admin; }
     public String getPrihlasenyUzivatel() { return prihlasenyUzivatel; }
 
+    // Zkontroluje, zda je aktuálně přihlášený uživatel administrátorem
     public boolean isAdmin() {
         return prihlasenyUzivatel != null && prihlasenyUzivatel.equals(admin.getLogin());
     }
 
+    // Ověří přihlašovací údaje (login a hash hesla) vůči databázi uživatelů a adminovi
     public boolean prihlasit(String login, String heslo) {
         for (Kafar k : kafari) {
             if (k.getLogin().equals(login) && Uzivatel.overHeslo(heslo, k.getHesloHash())) {
@@ -295,7 +299,8 @@ public class KafeController {
                (v.getCenaZaVypiteKavy() != null && cenaTab != null && v.getCenaZaVypiteKavy().compareTo(cenaTab) == 0)) {
                 return v;
             }
-        }        return null;
+        }
+        return null;
     }
 
     // Vrací agregovanou položku (sečte dostupná množství ze všech dřívějších nákupů dané suroviny se stejnou jednotkou)
@@ -306,7 +311,7 @@ public class KafeController {
                 if (combinedPolozka == null) {
                     combinedPolozka = new PolozkaSkladu(p.getId(), p.getNazev(), p.getKoupeneMnozstvi(),
                         p.getAktualniMnozstvi(), p.getJednotka(), p.getCenaZaKus(), p.getMenaPenezni());
-                } else if (combinedPolozka.getJednotka().equals(p.getJednotka())) {
+                    } else if (combinedPolozka.getJednotka().equals(p.getJednotka())) {
                     combinedPolozka.setAktualniMnozstvi(combinedPolozka.getAktualniMnozstvi() + p.getAktualniMnozstvi());
                 }
             }

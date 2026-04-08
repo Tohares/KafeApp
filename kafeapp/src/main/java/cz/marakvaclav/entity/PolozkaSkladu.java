@@ -2,6 +2,10 @@ package cz.marakvaclav.entity;
 
 import java.math.BigDecimal;
 
+/**
+ * Entita reprezentující konkrétní naskladněnou položku nebo její střípek (např. spotřebovanou část balení).
+ * Udržuje informaci o tom, kolik suroviny z původního nákupu bylo pořízeno a kolik jí ještě zbývá k dispozici.
+ */
 public class PolozkaSkladu {
     private static int count = 0;
     private int id;

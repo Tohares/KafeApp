@@ -11,7 +11,9 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.nio.charset.StandardCharsets;
 
+// Třída zajišťující veškeré operace se soubory (CSV), distribuované zámky (lock) a kontrolu integrity dat (podpisy).
 public class SpravceSouboru {
     private static final String SOUBOR_DAT_KAFARI = "kafari.csv";
     private static final String SOUBOR_LOCK_KAFARI = "kafari.lock";
@@ -77,6 +79,7 @@ public class SpravceSouboru {
         return Paths.get(pracovniSlozka, soubor);
     }
 
+    // Uloží nebo zaktualizuje záznam o vyúčtování do souboru pomocí bezpečného atomického zápisu
     public static void ulozVyuctovani(Vyuctovani vyuctovani, String prihlasenyUzivatel) {
         String identifikatorUctenky = vyuctovani.getLogin() + ";" + 
                                       vyuctovani.getDatumVystaveni() + ";" + 
@@ -344,6 +347,7 @@ public class SpravceSouboru {
         }
     }
 
+    // Pokusí se vytvořit .lock soubor pro zajištění exkluzivního přístupu (ochrana proti souběžnému zápisu více instancí)
     private static boolean zkusZiskatZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {
         try {
             Path lockPath = getCesta(nazevZamekSouboru);
@@ -393,14 +397,14 @@ public class SpravceSouboru {
 
     private static void podepisSoubor(Path cesta, String nazevSigSouboru) throws IOException {
         byte[] dataSouboru = Files.readAllBytes(cesta);
-        String hashSouboru = Uzivatel.checkSum(new String(dataSouboru)); 
+        String hashSouboru = Uzivatel.checkSum(new String(dataSouboru, StandardCharsets.UTF_8)); 
         Files.writeString(getCesta(nazevSigSouboru), hashSouboru);
     }
 
     private static void zkontrolujIntegritu(Path cestaKDatum, Path cestaKPodpisu, String nazevSouboru) throws IOException {
         if (Files.exists(cestaKDatum)) {
             if (Files.exists(cestaKPodpisu)) {
-                String aktualniPodpis = Uzivatel.checkSum(new String(Files.readAllBytes(cestaKDatum)));
+                String aktualniPodpis = Uzivatel.checkSum(new String(Files.readAllBytes(cestaKDatum), StandardCharsets.UTF_8));
                 String ulozenyPodpis = Files.readString(cestaKPodpisu);
     
                 if (!aktualniPodpis.equals(ulozenyPodpis)) {

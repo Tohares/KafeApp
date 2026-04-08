@@ -4,6 +4,10 @@ import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 
+/**
+ * Vykreslovač buňky tabulky, který vizuálně formátuje stav platby.
+ * Zaplacené účtenky zobrazuje zeleně jako nezaktivní "Uhrazeno", nezaplacené naopak červeně jako "Zaplatit".
+ */
 public class ButtonRenderer extends JButton implements TableCellRenderer {
     public ButtonRenderer() {
         setOpaque(true);

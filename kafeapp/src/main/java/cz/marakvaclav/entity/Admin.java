@@ -1,5 +1,9 @@
 package cz.marakvaclav.entity;
 
+/**
+ * Entita reprezentující administrátora systému. 
+ * Oproti běžnému uživateli má navíc nastavené bankovní údaje pro příjem plateb od ostatních kafařů.
+ */
 public class Admin extends Uzivatel {
     private String cisloUctuIBAN = null;
     private String cisloUctuCZ = null;

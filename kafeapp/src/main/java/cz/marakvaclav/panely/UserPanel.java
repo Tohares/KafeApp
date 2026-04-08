@@ -5,6 +5,10 @@ import cz.marakvaclav.tabulky.UserTableModel;
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ * Informační panel pro běžného uživatele (kafaře) zobrazený v horní části jeho okna.
+ * Poskytuje přehlednou tabulku o tom, kolik káv momentálně dluží a jaké má dlouhodobé statistiky.
+ */
 public class UserPanel extends JPanel {
     private JTable table;
     private UserTableModel tableModel;

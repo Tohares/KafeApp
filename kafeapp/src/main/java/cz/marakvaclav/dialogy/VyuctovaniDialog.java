@@ -5,6 +5,10 @@ import cz.marakvaclav.sluzby.KafeController;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Dialog pro vytvoření hromadného vyúčtování.
+ * Umožňuje zadat spotřebované množství surovin a automaticky validuje, zda je dostatek zásob na skladě.
+ */
 public class VyuctovaniDialog extends JDialog {
     private boolean succeeded;
 
@@ -53,6 +57,7 @@ public class VyuctovaniDialog extends JDialog {
                 int mnozstviCukr = parseMnozstvi(textFieldCukr.getText());
                 int mnozstviCitr = parseMnozstvi(textFieldCitr.getText());
 
+                // Pokusí se provést transakci. Pokud není dostatek surovin, vyhodí výjimku a dialog zůstane otevřený pro opravu.
                 controller.zpracujVyuctovani(mnozstviKafe, mnozstviMleka, mnozstviCukr, mnozstviCitr);
                 succeeded = true;
                 dispose();

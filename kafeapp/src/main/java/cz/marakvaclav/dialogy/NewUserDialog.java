@@ -7,6 +7,11 @@ import java.awt.*;
 import java.util.List;
 import java.util.Arrays;
 
+/**
+ * Dialog pro registraci nového běžného uživatele (kafaře).
+ * Zajišťuje základní validaci vstupů - kontroluje, zda se zadaná hesla shodují 
+ * a zda uživatel se stejným loginem v systému již neexistuje.
+ */
 public class NewUserDialog extends JDialog {
     private String login;
     private String heslo;
@@ -33,6 +38,7 @@ public class NewUserDialog extends JDialog {
         JButton btnStorno = new JButton("Storno");
 
         btnOk.addActionListener(e -> {
+            // Validace shody hesel a unikátnosti uživatelského jména
             if (!Arrays.equals(passwordFieldHesloFirst.getPassword(), passwordFieldHesloSecond.getPassword())) {
                 JOptionPane.showMessageDialog(this, "Hesla se neshoduji!", "Chyba", JOptionPane.ERROR_MESSAGE);
                 return;

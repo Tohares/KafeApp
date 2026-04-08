@@ -4,6 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 
+/**
+ * Dialog pro změnu hesla aktuálně přihlášeného uživatele.
+ * Vyžaduje pro potvrzení bezpečně zadat původní heslo a zopakovat zadání nového, 
+ * čímž se předchází překlepům při jeho změně.
+ */
 public class ZmenaHeslaDialog extends JDialog {
     private JPasswordField passwordFieldStare;
     private JPasswordField passwordFieldNove1;

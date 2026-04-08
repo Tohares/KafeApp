@@ -12,7 +12,7 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-
+// Hlavní okno aplikace, které se stará o vykreslování jednotlivých panelů, dialogů a obsluhu událostí (kliknutí na tlačítka, menu).
 public class KafeGui extends JFrame {
     private KafeController controller;
     private JPanel emptyPanel;
@@ -113,6 +113,7 @@ public class KafeGui extends JFrame {
         emptyPanel = new JPanel(new BorderLayout());
         add(emptyPanel, BorderLayout.CENTER);
 
+        // Inicializace hlavních ovládacích tlačítek pro standardního kafaře
         JPanel panelTlacitek = new JPanel();
         
         vypitButton = new JButton("Vypít kávu");
@@ -138,6 +139,7 @@ public class KafeGui extends JFrame {
 
         add(panelTlacitek, BorderLayout.SOUTH);
 
+        // Inicializace dodatečných ovládacích tlačítek pro administrátora
         JPanel panelTlacitekAdmina = new JPanel();
         kafariButton = new JButton("Kafaři");
         skladButton = new JButton("Sklad");
@@ -266,31 +268,42 @@ public class KafeGui extends JFrame {
 
     public void zobrazPanelKafaru() {
         if (controller.isAdmin()) {
+            // Zruší výběr na pozadí, aby se zablokovala na nich závislá kontextová tlačítka
+            skladPanel.getTable().clearSelection();
+            uctenkyPanel.getTable().clearSelection();
+
             kafariPanel.obnovData(controller.getKafari(), controller.getSeznamVyuctovani());
+            
             updateView();
             emptyPanel.add(kafariPanel);
-            emptyPanel.revalidate();
-            emptyPanel.repaint();
+            revalidate(); // Revaliduje celé okno, aby se správně přepočítala šířka tlačítek
+            repaint();
         }
     }
 
     public void zobrazPanelSkladu() {
         if (controller.isAdmin()) {
+            skladPanel.getTable().clearSelection();
+            uctenkyPanel.getTable().clearSelection();
+
             skladPanel.obnovData(controller.getSklad());
             updateView();
             emptyPanel.add(skladPanel);
-            emptyPanel.revalidate();
-            emptyPanel.repaint();
+            revalidate();
+            repaint();
         }
     }
 
     public void zobrazPanelUctenek() {
         if (controller.isAdmin()) {
+            skladPanel.getTable().clearSelection();
+            uctenkyPanel.getTable().clearSelection();
+
             uctenkyPanel.obnovData(controller.getSeznamVyuctovani(), null);
             updateView();
             emptyPanel.add(uctenkyPanel);
-            emptyPanel.revalidate();
-            emptyPanel.repaint();
+            revalidate();
+            repaint();
         }
     }
 
@@ -451,6 +464,7 @@ public class KafeGui extends JFrame {
         exportHistorieKafareButton.setVisible(expHistKafare);
     }
 
+    // Centrální metoda pro překreslení okna a řízení viditelnosti panelů a tlačítek podle aktuální role/stavu
     public void updateView() {
         emptyPanel.removeAll();
         if (nacitaSe) {
@@ -516,8 +530,8 @@ public class KafeGui extends JFrame {
             menuItemImportZalohy.setVisible(controller.isAdmin());
         }
         
-        emptyPanel.revalidate();
-        emptyPanel.repaint();
+        revalidate();
+        repaint();
     }
 
     private void nastavOdsazeni(JTable table, int padding) {

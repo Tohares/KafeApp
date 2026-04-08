@@ -6,6 +6,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.math.BigDecimal;
 
+/**
+ * Univerzální dialog pro správu položek skladu.
+ * Funguje ve dvou režimech:
+ * 1. Vytvoření nové položky (naskladnění)
+ * 2. Úprava nebo smazání existující položky (isEditMode)
+ */
 public class PolozkaDialog extends JDialog {
     private PolozkaSkladu polozka;
     private boolean isEditMode;
@@ -104,6 +110,7 @@ public class PolozkaDialog extends JDialog {
                 if (isEditMode) {
                     aktualni = Integer.parseInt(textFieldAktualniMnozstvi.getText());
                     if (aktualni < 0) throw new NumberFormatException("Záporné hodnoty nejsou povoleny.");
+                    // Zabráníme nastavení aktuálního množství nad rámec původně zakoupeného balení
                     if (aktualni > koupene) {
                         JOptionPane.showMessageDialog(this, "Aktuální množství nemůže být vyšší než celkové nakoupené množství!", "Chyba", JOptionPane.WARNING_MESSAGE);
                         return;

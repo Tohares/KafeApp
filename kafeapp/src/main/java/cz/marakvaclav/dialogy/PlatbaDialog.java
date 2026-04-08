@@ -6,6 +6,11 @@ import cz.marakvaclav.entity.Vyuctovani;
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ * Dialog zobrazující detailní platební údaje ke konkrétnímu vyúčtování.
+ * Generuje a zobrazuje QR kód (ve formátu SPAYD) pro snadnou úhradu z mobilního bankovnictví.
+ * Pokud okno otevře administrátor, obsahuje navíc tlačítko pro manuální potvrzení přijetí platby.
+ */
 public class PlatbaDialog extends JDialog {
     private boolean succeeded = false;
 
@@ -26,6 +31,7 @@ public class PlatbaDialog extends JDialog {
 
         JLabel qrLabel = new JLabel();
         qrLabel.setHorizontalAlignment(JLabel.CENTER);
+        // Vygenerování SPAYD QR kódu pro okamžité zaplacení skrze bankovní aplikaci
         java.awt.image.BufferedImage qrImage = vyuctovani.vytvorQRKodProPlatbu(admin);
         if (qrImage != null) {
             qrLabel.setIcon(new ImageIcon(qrImage));

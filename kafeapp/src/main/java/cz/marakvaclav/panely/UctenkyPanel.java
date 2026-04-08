@@ -8,6 +8,10 @@ import java.awt.*;
 import java.util.List;
 import javax.swing.*;
 
+/**
+ * Panel pro zobrazení historie vyúčtování (účtenek).
+ * Administrátor zde vidí globální seznam všech účtenek, běžný uživatel naopak jen své osobní záznamy.
+ */
 public class UctenkyPanel extends JPanel {
     private JTable table;
     private UctenkyTableModel tableModel;
@@ -22,9 +26,11 @@ public class UctenkyPanel extends JPanel {
         table.setFont(new Font("Arial", Font.PLAIN, 16));
         table.setRowHeight(30);
         
+        // Nastavení speciálního vykreslovače a editoru pro poslední sloupec s tlačítkem platby
         table.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
         table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox(), gui));
         
+        // Listener, který umožňuje bezpečně zrušit výběr při opětovném kliknutí na již vybraný řádek
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             private int lastSelectedRow = -1;
             @Override

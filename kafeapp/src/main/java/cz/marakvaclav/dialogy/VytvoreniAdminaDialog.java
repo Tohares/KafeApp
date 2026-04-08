@@ -6,6 +6,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 
+/**
+ * Úvodní inicializační dialog, který se zobrazí pouze při historicky prvním spuštění aplikace.
+ * Slouží k vytvoření nepostradatelného administrátorského účtu a zadání bankovních údajů,
+ * na které budou ostatní uživatelé zasílat své platby za vypitou kávu.
+ */
 public class VytvoreniAdminaDialog extends JDialog {
     private JTextField textFieldLogin;
     private JPasswordField passwordFieldHesloFirst;
@@ -46,6 +51,7 @@ public class VytvoreniAdminaDialog extends JDialog {
         getRootPane().setDefaultButton(btnOk);
 
         btnOk.addActionListener(e -> {
+            // Nutná validace před založením nejdůležitějšího účtu v systému
             if (textFieldLogin.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Login nesmí být prázdný!", "Chyba", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -77,6 +83,7 @@ public class VytvoreniAdminaDialog extends JDialog {
         getContentPane().add(panel, BorderLayout.CENTER);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
+        // Nelze zavřít křížkem - dokud není admin vytvořen, aplikace nemá smysl
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE); // Zabrání křížku
         pack(); 
         setLocationRelativeTo(parent);

@@ -6,6 +6,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 
+/**
+ * Dialog pro import kompletní zálohy databáze ze souboru.
+ * Nabízí uživateli (administrátorovi) dvě strategie obnovy: 
+ * bezpečné chytré sloučení (přidá jen to, co chybí) nebo plné přepsání (nukleární volba).
+ */
 public class ImportHistorieVsehoDialog extends JDialog {
     private boolean succeeded = false;
 

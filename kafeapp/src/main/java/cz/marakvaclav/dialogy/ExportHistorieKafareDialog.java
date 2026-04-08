@@ -6,6 +6,11 @@ import java.awt.*;
 import java.util.List;
 import javax.swing.*;
 
+/**
+ * Dialog pro zobrazení a případný export osobní historie vyúčtování běžného uživatele (kafaře).
+ * Data zobrazuje v přehledném textovém formátu a nabízí uložení do standardního CSV souboru
+ * pro možnost dalšího zpracování (např. v Excelu).
+ */
 public class ExportHistorieKafareDialog extends JDialog{
     private boolean succeeded = false;
 
@@ -22,6 +27,7 @@ public class ExportHistorieKafareDialog extends JDialog{
                             "Datum", "Počet káv", "Cena/ks", "Celkem", "Měna", "Zaplaceno"));
         sbVzhled.append("----------------------------------------------------------------------\n");
 
+        // Formátování dat historie do podoby zarovnané tabulky pro čistě vizuální zobrazení
         for (Vyuctovani v : historie) {
             sbVzhled.append(String.format("%-12s | %-10d | %-10s | %-10s | %-6s | %-10s\n",
                     v.getDatumVystaveni().toString(),

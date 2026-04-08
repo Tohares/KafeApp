@@ -7,6 +7,10 @@ import java.awt.*;
 import java.util.List;
 import javax.swing.*;
 
+/**
+ * Panel pro administrátora zobrazující aktuální stav skladu surovin.
+ * Slouží k rychlému přehledu o tom, kolik kusů jakého balení z původního nákupu zbývá.
+ */
 public class SkladPanel extends JPanel {
     private JTable table;
     private SkladTableModel tableModel;

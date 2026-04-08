@@ -6,6 +6,10 @@ import java.util.HexFormat;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+/**
+ * Základní (předková) třída reprezentující uživatele systému.
+ * Udržuje přihlašovací údaje a poskytuje nástroje pro bezpečné ukládání a ověřování hesel.
+ */
 public class Uzivatel {
     protected String login;
     protected String hesloHash;
@@ -21,6 +25,7 @@ public class Uzivatel {
     public void setHeslo(String heslo) { hesloHash = hashHeslo(heslo); }
     public void setHesloHash(String hesloHash) { this.hesloHash = hesloHash; }
 
+    // Vygeneruje bezpečný hash hesla pomocí algoritmu BCrypt (včetně náhodné kryptografické soli)
     public static String hashHeslo(String heslo) {
         return BCrypt.hashpw(heslo, BCrypt.gensalt());
     }
@@ -32,6 +37,7 @@ public class Uzivatel {
         return false;
     }
 
+    // Generuje kryptografický kontrolní součet (SHA-256) pro ověřování celistvosti a pravosti uložených datových souborů
     public static String checkSum(String line) {
         try {
             String salt = getSecretSalt();

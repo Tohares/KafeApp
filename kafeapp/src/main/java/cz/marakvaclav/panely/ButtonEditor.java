@@ -6,6 +6,10 @@ import cz.marakvaclav.sluzby.KafeGui;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Editor buňky tabulky, který vkládá interaktivní tlačítko do sloupce se stavem platby.
+ * Umožňuje uživateli kliknutím na toto tlačítko vyvolat dialog pro úhradu daného vyúčtování.
+ */
 public class ButtonEditor extends DefaultCellEditor {
     protected JButton button;
     private Vyuctovani vyuctovani;
@@ -20,6 +24,7 @@ public class ButtonEditor extends DefaultCellEditor {
         
         button.addActionListener(e -> {
             fireEditingStopped(); 
+            // Pokud účtenka ještě nebyla zaplacena, kliknutím se otevře okno s platebními údaji a QR kódem
             if (vyuctovani != null && !vyuctovani.getStavPlatby()) {
                 gui.otevriPlatbu(vyuctovani);
             }

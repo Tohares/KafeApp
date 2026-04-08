@@ -2,6 +2,10 @@ package cz.marakvaclav.tabulky;
 
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Datový model pro tabulku kafařů (administrátorský pohled).
+ * Definuje sloupce pro celkový přehled o uživatelích a umožňuje rychlou editaci počtu nezúčtovaných káv.
+ */
 public class KafariTableModel extends DefaultTableModel {
     private static final String[] SLOUPCE = {"Uživatel (login)", "Nezúčtované kávy", "Zaplacené kávy", "Účtované kávy"};
 

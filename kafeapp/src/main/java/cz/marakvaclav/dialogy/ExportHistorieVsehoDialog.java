@@ -8,6 +8,10 @@ import java.awt.*;
 import java.io.File;
 import java.io.PrintWriter;
 
+/**
+ * Dialog pro export kompletní zálohy databáze do jednoho souboru.
+ * Zahrnuje uživatele, stav skladu i historii vyúčtování.
+ */
 public class ExportHistorieVsehoDialog extends JDialog {
     
     public ExportHistorieVsehoDialog(Frame parent, KafeController controller) {

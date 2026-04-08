@@ -8,6 +8,10 @@ import java.awt.*;
 import java.util.List;
 import javax.swing.*;
 
+/**
+ * Panel pro administrátora zobrazující ucelený přehled všech uživatelů (kafařů).
+ * Ukazuje aktuální nezaúčtovaný dluh kafaře a agregované historické statistiky (účtované a zaplacené kávy).
+ */
 public class KafariPanel extends JPanel {
     private JTable table;
     private KafariTableModel tableModel;
@@ -24,6 +28,7 @@ public class KafariPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    // Přepočítá statistiky pro každého kafaře na základě kompletní historie vyúčtování
     public void obnovData(List<Kafar> kafari, List<Vyuctovani> seznamVyuctovani) {
         tableModel.setRowCount(0);
         for (Kafar k : kafari) {

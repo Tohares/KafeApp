@@ -4,6 +4,11 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.util.function.Supplier;
 
+/**
+ * Dialog zobrazující se při pokusu o přístup k blokovanému souboru.
+ * Zajišťuje neblokující odpočet a periodické zkoušení získání zámku na pozadí,
+ * přičemž dává uživateli možnost operaci kdykoliv stornovat.
+ */
 public class CekaniNaZamekDialog extends JDialog {
     private boolean uspech = false;
 
@@ -29,6 +34,7 @@ public class CekaniNaZamekDialog extends JDialog {
 
         final int[] zbyvaPokusu = {MAX_CEKANI_SEKUND * 2};
         
+        // Časovač, který se každého půl vteřiny pokusí znovu provést zamčení (dodané přes pokusZiskatZamek)
         Timer timer = new Timer(500, null);
         timer.addActionListener(e -> {
             if (pokusZiskatZamek.get()) {

@@ -13,10 +13,12 @@ public class App
     public static void main( String[] args )
     {
         System.out.println( "Vítejte v KafeApp" );
-        
+
+        // Spuštění GUI ve správném vlákně (Event Dispatch Thread) pro bezpečné vykreslování ve Swingu
         SwingUtilities.invokeLater(() -> {
             SpravceSouboru.nactiKonfiguraci();
             
+            // Kontrola prvního spuštění a nastavení cesty k datové složce s CSV soubory
             java.io.File configFile = new java.io.File("kafeapp.properties");
             if (!configFile.exists()) {
                 int volba = JOptionPane.showConfirmDialog(null, 
@@ -38,6 +40,7 @@ public class App
                 }
             }
 
+            // Inicializace hlavní byznys logiky a načtení základních datových struktur
             KafeController controller = new KafeController();
             if (!controller.inicializujAplikaci()) {
                 System.out.println("Založení administrátora bylo zrušeno. Aplikace se ukončí.");
