@@ -167,13 +167,11 @@ public class Vyuctovani {
         login = line[0];
         datumVystaveni = LocalDate.parse(line[1]);
         pocetUctovanychKavCelkem = Integer.parseInt(line[2]);
-        celkovaCena = new BigDecimal(line[3]);
         if (line[3] != null && !line[3].equals("null") && !line[3].isEmpty()) {
             celkovaCena = new BigDecimal(line[3]);
         } else {
             celkovaCena = null;
         }
-        cenaJedneKavy = new BigDecimal(line[4]);
         if (line[4] != null && !line[4].equals("null") && !line[4].isEmpty()) {
             cenaJedneKavy = new BigDecimal(line[4]);
         } else {

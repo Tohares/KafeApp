@@ -514,9 +514,9 @@ public class KafeController {
             for (PolozkaSkladu is : impSklad) {
                 boolean found = false;
                 for (PolozkaSkladu cs : sklad) {
-                    if (cs.getNazev().equals(is.getNazev()) && cs.getJednotka().equals(is.getJednotka())) {
-                        cs.setKoupeneMnozstvi(cs.getKoupeneMnozstvi() + is.getKoupeneMnozstvi());
-                        cs.setAktualniMnozstvi(cs.getAktualniMnozstvi() + is.getAktualniMnozstvi());
+                    if (cs.getId() == is.getId()) {
+                        // Jedná se o stejnou naskladněnou položku, ponecháme tu s více spotřebovaným množstvím
+                        cs.setAktualniMnozstvi(Math.min(cs.getAktualniMnozstvi(), is.getAktualniMnozstvi()));
                         found = true; break;
                     }
                 }
@@ -526,6 +526,11 @@ public class KafeController {
                 boolean found = false;
                 for (Vyuctovani cv : seznamVyuctovani) {
                     if (cv.getLogin().equals(iv.getLogin()) && cv.getDatumVystaveni().equals(iv.getDatumVystaveni()) && (cv.getCenaZaVypiteKavy() != null && iv.getCenaZaVypiteKavy() != null && cv.getCenaZaVypiteKavy().compareTo(iv.getCenaZaVypiteKavy()) == 0)) {
+                        // Pokud účtenka ze zálohy je zaplacená a současná nikoliv, převezmeme platbu ze zálohy
+                        if (iv.getStavPlatby() && !cv.getStavPlatby()) {
+                            cv.setStavPlatby(true);
+                            cv.setDatumPlatby(iv.getDatumPlatby());
+                        }
                         found = true; break;
                     }
                 }
@@ -543,5 +548,9 @@ public class KafeController {
         SpravceSouboru.prepisVsechnyUzivatele(kafari, admin, prihlasenyUzivatel);
         SpravceSouboru.prepisCelySklad(sklad, prihlasenyUzivatel);
         SpravceSouboru.prepisVsechnaVyuctovani(seznamVyuctovani, prihlasenyUzivatel);
+        
+        if (isNuclear) {
+            odhlasit();
+        }
     }
 }
