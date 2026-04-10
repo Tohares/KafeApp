@@ -25,7 +25,7 @@ public class KafeController {
     // Jednovláknový exekutor garantuje, že se síťové zápisy řadí za sebe, neblokují UI a neperou se o zámky (Optimistic UI)
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
     // Počítadlo běžících I/O operací pro zajištění bezpečného ukončení (aby se aplikace nezavřela během zápisu)
-    private final AtomicInteger pocetAktivnichZapisov = new AtomicInteger(0);
+    private final AtomicInteger pocetAktivnichZapisu = new AtomicInteger(0);
     private boolean cekaNaUkonceni = false;
 
     public KafeController() {
@@ -166,7 +166,7 @@ public class KafeController {
     }
 
     public void provedZapisNaPozadi(Runnable uloha) {
-        pocetAktivnichZapisov.incrementAndGet();
+        pocetAktivnichZapisu.incrementAndGet();
         // Zobrazí varovný červený pruh upozorňující na probíhající síťovou komunikaci
         if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavViditelnostZapisovani(true));
         
@@ -174,7 +174,7 @@ public class KafeController {
             try {
                 uloha.run();
             } finally {
-                if (pocetAktivnichZapisov.decrementAndGet() == 0) {
+                if (pocetAktivnichZapisu.decrementAndGet() == 0) {
                     if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavViditelnostZapisovani(false));
                     // Pokud uživatel kliknul na křížek během ukládání, aplikace se po dokončení zápisu sama vypne
                     if (cekaNaUkonceni) {
@@ -187,7 +187,7 @@ public class KafeController {
 
     public void ukonceniAplikace() {
         // Pokud probíhá zápis na pozadí, zablokujeme okamžité zabití procesu, čímž předejdeme poškození datových souborů na síti
-        if (pocetAktivnichZapisov.get() > 0) {
+        if (pocetAktivnichZapisu.get() > 0) {
             cekaNaUkonceni = true;
             if (gui != null) {
                 gui.zobrazInformaci("Aplikace právě ukládá data na síťový disk.\nVyčkejte prosím, po dokončení operace se zavře sama.");

@@ -41,6 +41,8 @@ public class KafeGui extends JFrame {
     private JMenuItem menuItemImportZalohy;
     private JPanel panelUpozorneniZapis;
     private boolean nacitaSe = false;
+    private Timer timerSkrytiZapisovani;
+    private long casPoslednihoZobrazeni = 0;
 
     public KafeGui(KafeController controller) {
         this.controller = controller;
@@ -255,7 +257,24 @@ public class KafeGui extends JFrame {
     }
 
     public void nastavViditelnostZapisovani(boolean viditelne) {
-        panelUpozorneniZapis.setVisible(viditelne);
+        if (viditelne) {
+            if (timerSkrytiZapisovani != null && timerSkrytiZapisovani.isRunning()) {
+                timerSkrytiZapisovani.stop();
+            }
+            if (!panelUpozorneniZapis.isVisible()) {
+                casPoslednihoZobrazeni = System.currentTimeMillis();
+                panelUpozorneniZapis.setVisible(true);
+            }
+        } else {
+            long zbyvaCasu = 1000 - (System.currentTimeMillis() - casPoslednihoZobrazeni);
+            if (zbyvaCasu > 0) {
+                timerSkrytiZapisovani = new Timer((int) zbyvaCasu, e -> panelUpozorneniZapis.setVisible(false));
+                timerSkrytiZapisovani.setRepeats(false);
+                timerSkrytiZapisovani.start();
+            } else {
+                panelUpozorneniZapis.setVisible(false);
+            }
+        }
     }
 
     public void zobrazChybu(String zprava) {
