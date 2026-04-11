@@ -31,7 +31,7 @@ public class SkladPanel extends JPanel {
     public void obnovData(List<PolozkaSkladu> sklad) {
         tableModel.setRowCount(0);
         for (PolozkaSkladu p : sklad) {
-            tableModel.addRow(new Object[]{p.getId(), p.getNazev(), p.getKoupeneMnozstvi(), 
+            tableModel.addRow(new Object[]{p.getId(), p.getSurovina(), p.getKoupeneMnozstvi(), 
                 p.getAktualniMnozstvi(), p.getJednotka(), p.getCenaZaKus(), p.getMenaPenezni()});
         }
     }

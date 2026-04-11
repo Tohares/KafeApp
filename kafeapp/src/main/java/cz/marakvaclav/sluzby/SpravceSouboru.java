@@ -40,6 +40,13 @@ public class SpravceSouboru {
         } catch (Exception e) {}
     }
 
+    // Vlastní výjimka pro rozeznání nedostupného/odpojeného disku od jiných logických chyb
+    public static class DatabaseUnavailableException extends RuntimeException {
+        public DatabaseUnavailableException(String message) {
+            super(message);
+        }
+    }
+
     public static void setPracovniSlozka(String slozka) {
         pracovniSlozka = slozka;
         ulozKonfiguraci();
@@ -93,8 +100,7 @@ public class SpravceSouboru {
 
     public static void prepisVsechnaVyuctovani(List<Vyuctovani> vyuctovaniList, String prihlasenyUzivatel) {
         if (!ziskejZamek(SOUBOR_LOCK_VYUCTOVANI, prihlasenyUzivatel)) {
-            System.err.println("Soubor " + SOUBOR_DAT_VYUCTOVANI + " je blokován.");
-            return;
+            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_VYUCTOVANI + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
@@ -107,7 +113,7 @@ public class SpravceSouboru {
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             podepisSoubor(cestaKDatum, SOUBOR_DAT_VYUCTOVANI + ".sig");
         } catch (IOException e) {
-            System.err.println("Chyba při přepisu vyúčtování: " + e.getMessage());
+            throw new DatabaseUnavailableException("Chyba při přepisu vyúčtování: " + e.getMessage());
         } finally {
             uvolniZamek(SOUBOR_LOCK_VYUCTOVANI);
         }
@@ -170,8 +176,14 @@ public class SpravceSouboru {
     }
 
     public static Admin nactiAdmina() {
+        // Explicitní kontrola dostupnosti cílové složky před jakýmkoliv čtením (odpojený disk atd.)
+        Path cestaSlozky = getCesta("");
+        if (pracovniSlozka != null && !pracovniSlozka.isEmpty() && !Files.exists(cestaSlozky)) {
+            throw new DatabaseUnavailableException("Složka s databází není dostupná: " + pracovniSlozka);
+        }
+
         List<String> radky = nactiRadkyZeSouboru(SOUBOR_DAT_KAFARI, SOUBOR_LOCK_KAFARI, "appStart");
-        if (radky == null) return null;
+        if (radky == null || radky.isEmpty()) return null; // Null/prázdné nyní znamená pouze skutečně chybějící soubor
 
         for (String radek : radky) {
             String[] parts = radek.split(";");
@@ -201,8 +213,7 @@ public class SpravceSouboru {
 
     public static void prepisVsechnyUzivatele(List<Kafar> kafari, Admin admin, String prihlasenyUzivatel) {
         if (!ziskejZamek(SOUBOR_LOCK_KAFARI, prihlasenyUzivatel)) {
-            System.err.println("Soubor " + SOUBOR_DAT_KAFARI + " je blokován.");
-            return;
+            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_KAFARI + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
@@ -218,7 +229,7 @@ public class SpravceSouboru {
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             podepisSoubor(cestaKDatum, SOUBOR_DAT_KAFARI + ".sig");
         } catch (IOException e) {
-            System.err.println("Chyba při přepisu kafařů: " + e.getMessage());
+            throw new DatabaseUnavailableException("Chyba při přepisu kafařů (disk odpojen?): " + e.getMessage());
         } finally {
             uvolniZamek(SOUBOR_LOCK_KAFARI);
         }
@@ -230,8 +241,7 @@ public class SpravceSouboru {
 
     public static void prepisCelySklad(List<PolozkaSkladu> skladList, String prihlasenyUzivatel) {
         if (!ziskejZamek(SOUBOR_LOCK_SKLAD, prihlasenyUzivatel)) {
-            System.err.println("Soubor " + SOUBOR_DAT_SKLAD + " je blokován.");
-            return;
+            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_SKLAD + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
@@ -244,7 +254,7 @@ public class SpravceSouboru {
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             podepisSoubor(cestaKDatum, SOUBOR_DAT_SKLAD + ".sig");
         } catch (IOException e) {
-            System.err.println("Chyba při přepisu skladu: " + e.getMessage());
+            throw new DatabaseUnavailableException("Chyba při přepisu skladu (disk odpojen?): " + e.getMessage());
         } finally {
             uvolniZamek(SOUBOR_LOCK_SKLAD);
         }
@@ -260,7 +270,11 @@ public class SpravceSouboru {
             if (polozkaLine.length >= 7) {
                 try {
                     int id = Integer.parseInt(polozkaLine[0]);
-                    String nazev = polozkaLine[1];
+                    Surovina surovina = Surovina.fromString(polozkaLine[1]);
+                    if (surovina == null) {
+                        throw new IllegalArgumentException("Neznámý druh suroviny: " + polozkaLine[1]);
+                    }
+                    
                     int koupeneMnozstvi = Integer.parseInt(polozkaLine[2]);
                     int aktualniMnozstvi = Integer.parseInt(polozkaLine[3]);
                     String jednotka = polozkaLine[4];
@@ -271,7 +285,7 @@ public class SpravceSouboru {
                         throw new IllegalArgumentException("Záporné hodnoty");
                     }
                     
-                    PolozkaSkladu polozka = new PolozkaSkladu(id, nazev, koupeneMnozstvi, aktualniMnozstvi, jednotka, cenaZaKus, menaPenezni);
+                    PolozkaSkladu polozka = new PolozkaSkladu(id, surovina, koupeneMnozstvi, aktualniMnozstvi, jednotka, cenaZaKus, menaPenezni);
                     sklad.add(polozka);
                 } catch (Exception e) {
                     zaznamenejChybuIntegrity("Poškozený řádek skladu (přeskočeno): " + radek);
@@ -284,8 +298,7 @@ public class SpravceSouboru {
     // Metoda pro přidání nebo úpravu existujícího řádku (tzv. Upsert) využívající bezpečný atomický zápis přes dočasný soubor
     private static void aktualizujNeboPridejRadek(String nazevSouboru, String nazevTmp, String nazevLock, String prihlasenyUzivatel, String prefixKHledani, String novyRadek) {
         if (!ziskejZamek(nazevLock, prihlasenyUzivatel)) {
-            System.err.println("Soubor " + nazevSouboru + " je blokován jiným uživatelem. Zkuste to později.");
-            return;
+            throw new DatabaseUnavailableException("Soubor " + nazevSouboru + " je blokován jiným procesem.");
         }
 
         try {
@@ -316,7 +329,7 @@ public class SpravceSouboru {
             podepisSoubor(cestaKDatum, nazevSouboru + ".sig");
 
         } catch (IOException e) {
-            System.err.println("Chyba při zápisu do souboru " + nazevSouboru + ": " + e.getMessage());
+            throw new DatabaseUnavailableException("Chyba při zápisu do " + nazevSouboru + " (odpojený disk?): " + e.getMessage());
         } finally {
             uvolniZamek(nazevLock);
         }
@@ -324,8 +337,7 @@ public class SpravceSouboru {
 
     private static List<String> nactiRadkyZeSouboru(String nazevSouboru, String nazevLock, String prihlasenyUzivatel) {
         if (!ziskejZamek(nazevLock, prihlasenyUzivatel)) {
-            System.err.println("Soubor " + nazevSouboru + " je blokován jiným uživatelem. Zkuste to později.");
-            return null;
+            throw new DatabaseUnavailableException("Soubor " + nazevSouboru + " je blokován jiným procesem.");
         }
 
         try {
@@ -338,10 +350,9 @@ public class SpravceSouboru {
             if (Files.exists(cestaKDatum)) {
                 radky = Files.readAllLines(cestaKDatum);
             }
-            return radky;
+            return radky; // Pokud soubor neexistuje, vrací se korektně prázdný list, ne null!
         } catch (IOException e) {
-            System.err.println("Chyba při čtení ze souboru " + nazevSouboru + ": " + e.getMessage());
-            return null;
+            throw new DatabaseUnavailableException("Chyba při čtení ze souboru " + nazevSouboru + ": " + e.getMessage());
         } finally {
             uvolniZamek(nazevLock);
         }
@@ -361,17 +372,21 @@ public class SpravceSouboru {
                     }
                 }
             }
-            if (!Files.exists(lockPath)) {
-                Files.createFile(lockPath);
-                String lockOwnerInfo = System.getProperty("user.name") + "@" + cachedHostName + 
-                    " user: " + prihlasenyUzivatel + " @" + System.currentTimeMillis();
-                Files.writeString(lockPath, lockOwnerInfo);
-                return true;
-            }
+
+            // ATOMICKÁ OPERACE: Přeskočíme exists() a zkusíme soubor přímo vytvořit.
+            // Zabráníme tak TOCTOU zranitelnosti. Pokud soubor existuje, vyhodí výjimku.
+            Files.createFile(lockPath);
+            String lockOwnerInfo = System.getProperty("user.name") + "@" + cachedHostName + 
+                " user: " + prihlasenyUzivatel + " @" + System.currentTimeMillis();
+            Files.writeString(lockPath, lockOwnerInfo);
+            return true;
+        } catch (FileAlreadyExistsException e) {
+            // Očekávaný stav - zámek právě drží jiná instance
+            return false;
         } catch (Exception e) {
             System.err.println("Nepodařilo se získat zámek " + nazevZamekSouboru + ": " + e.getMessage());
-        } // Používá se Exception pro zachycení i chyby číselného formátu u Long.parseLong
-        return false;
+            return false;
+        }
     }
 
     private static boolean ziskejZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {

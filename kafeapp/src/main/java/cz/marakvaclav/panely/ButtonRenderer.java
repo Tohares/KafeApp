@@ -20,9 +20,9 @@ public class ButtonRenderer extends JButton implements TableCellRenderer {
         boolean zaplaceno = (value instanceof Boolean) ? (Boolean) value : false;
         
         if (zaplaceno) {
-            setText("✓ Uhrazeno");
+            setText("✓ Detail platby");
             setBackground(new Color(200, 255, 200));
-            setEnabled(false);
+            setEnabled(true);
         } else {
             setText("Zaplatit");
             setBackground(new Color(255, 200, 200));

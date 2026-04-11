@@ -51,40 +51,54 @@ public class KafeController {
         if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavStavNacitani(true));
         
         ioExecutor.submit(() -> {
-            Admin tempAdmin = SpravceSouboru.nactiAdmina();
-            if (tempAdmin == null) {
-                try {
-                    // Vytvoření uživatele vyžaduje grafický dialog, proto se toto výjimečně hodí zpět do hlavního vlákna
-                    javax.swing.SwingUtilities.invokeAndWait(() -> {
-                        VytvoreniAdminaDialog dialog = new VytvoreniAdminaDialog(gui);
-                        dialog.setVisible(true);
-                        if (dialog.isSucceeded()) {
-                            admin = dialog.getAdmin();
-                            SpravceSouboru.ulozAdmina(admin, admin.getLogin());
-                        } else {
-                            System.exit(0);
-                        }
-                    });
-                } catch (Exception e) {}
-            } else {
-                admin = tempAdmin;
-            }
-
-            List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
-            kafari = (nacteniKafaru == null) ? new ArrayList<>() : nacteniKafaru;
-
-            List<PolozkaSkladu> nacteniSkladu = SpravceSouboru.nactiSklad();
-            sklad = (nacteniSkladu == null) ? new ArrayList<>() : nacteniSkladu;
-
-            List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
-            seznamVyuctovani = (nacteniVyuctovani == null) ? new ArrayList<>() : nacteniVyuctovani;
-            
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                if (gui != null) {
-                    gui.nastavStavNacitani(false);
-                    gui.zobrazChybyIntegrity();
+            try {
+                Admin tempAdmin = SpravceSouboru.nactiAdmina();
+                if (tempAdmin == null) {
+                    try {
+                        // Vytvoření uživatele vyžaduje grafický dialog, proto se toto výjimečně hodí zpět do hlavního vlákna
+                        javax.swing.SwingUtilities.invokeAndWait(() -> {
+                            VytvoreniAdminaDialog dialog = new VytvoreniAdminaDialog(gui);
+                            dialog.setVisible(true);
+                            if (dialog.isSucceeded()) {
+                                admin = dialog.getAdmin();
+                            } else {
+                                System.exit(0);
+                            }
+                        });
+                    } catch (Exception e) {}
+                    
+                    // Vynesené uložení mimo EDT (GUI) vlákno pro bezpečný záchyt výjimek sítě
+                    if (admin != null) {
+                        SpravceSouboru.ulozAdmina(admin, admin.getLogin());
+                    }
+                } else {
+                    admin = tempAdmin;
                 }
-            });
+
+                List<Kafar> nacteniKafaru = SpravceSouboru.nactiKafare();
+                kafari = (nacteniKafaru == null) ? new ArrayList<>() : nacteniKafaru;
+
+                List<PolozkaSkladu> nacteniSkladu = SpravceSouboru.nactiSklad();
+                sklad = (nacteniSkladu == null) ? new ArrayList<>() : nacteniSkladu;
+
+                List<Vyuctovani> nacteniVyuctovani = SpravceSouboru.nactiVyuctovani();
+                seznamVyuctovani = (nacteniVyuctovani == null) ? new ArrayList<>() : nacteniVyuctovani;
+                
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (gui != null) {
+                        gui.nastavStavNacitani(false);
+                        gui.zobrazChybyIntegrity();
+                    }
+                });
+            } catch (SpravceSouboru.DatabaseUnavailableException e) {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (gui != null) {
+                        gui.nastavStavNacitani(false);
+                        gui.zobrazChybu("Spojení s databází bylo přerušeno:\n" + e.getMessage());
+                        odhlasit();
+                    }
+                });
+            }
         });
     }
 
@@ -141,6 +155,14 @@ public class KafeController {
         }
     }
 
+    public void aktualizujPlatebniUdajeAdmina(String iban, String cz) {
+        if (isAdmin()) {
+            admin.setCisloUctuIBAN(iban);
+            admin.setCisloUctuCZ(cz);
+            provedZapisNaPozadi(() -> SpravceSouboru.ulozAdmina(admin, prihlasenyUzivatel));
+        }
+    }
+
     public boolean zmenitHeslo(String stareHeslo, String noveHeslo) {
         if (prihlasenyUzivatel == null) return false;
         
@@ -172,7 +194,26 @@ public class KafeController {
         
         ioExecutor.submit(() -> {
             try {
+                // Rychlé storno (Short-circuit): Pokud byl uživatel mezitím odhlášen (např. pád disku v předchozím vlákně),
+                // nebo pokud probíhá vypínání aplikace, další naklikané úkoly z fronty už neprovádíme a zahodíme je.
+                if (prihlasenyUzivatel == null || cekaNaUkonceni) {
+                    return;
+                }
                 uloha.run();
+            } catch (SpravceSouboru.DatabaseUnavailableException e) {
+                if (cekaNaUkonceni) return; // Během vypínání aplikace už nezobrazujeme chybové hlášky
+                
+                // Okamžitě zneplatníme relaci i na pozadí. Tím se zablokují (viz výše) všechny případné další 
+                // naplánované kliknutí, které si uživatel "naklikal" do fronty během toho, co disk neodpovídal.
+                prihlasenyUzivatel = null; 
+                
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (gui != null) {
+                        gui.zobrazChybu("Zápis selhal! Síťový disk byl pravděpodobně odpojen:\n" + e.getMessage());
+                        odhlasit(); // Bezpečnostně odhlásí uživatele a provede reset UI
+                        spustNacitaniDat(); // Zkusí znovu navázat spojení a případně ukáže prázdnou uvítací obrazovku
+                    }
+                });
             } finally {
                 if (pocetAktivnichZapisu.decrementAndGet() == 0) {
                     if (gui != null) javax.swing.SwingUtilities.invokeLater(() -> gui.nastavViditelnostZapisovani(false));
@@ -267,6 +308,8 @@ public class KafeController {
     public void zpracujPlatbu(Vyuctovani v) {
         v.setStavPlatby(true);
         v.setDatumPlatby(LocalDate.now());
+        v.setPlatebniUcetIBAN(admin.getCisloUctuIBAN());
+        v.setPlatebniUcetCZ(admin.getCisloUctuCZ());
         SpravceSouboru.ulozVyuctovani(v, admin.getLogin());
         gui.zobrazPanelUctenek();
     }
@@ -304,12 +347,12 @@ public class KafeController {
     }
 
     // Vrací agregovanou položku (sečte dostupná množství ze všech dřívějších nákupů dané suroviny se stejnou jednotkou)
-    public PolozkaSkladu getAgregovanaPolozka(String nazev) {
+    public PolozkaSkladu getAgregovanaPolozka(Surovina surovina) {
         PolozkaSkladu combinedPolozka = null;
         for (PolozkaSkladu p : sklad) {
-            if (p.getNazev().equals(nazev) && p.getAktualniMnozstvi() > 0) {
+            if (p.getSurovina() == surovina && p.getAktualniMnozstvi() > 0) {
                 if (combinedPolozka == null) {
-                    combinedPolozka = new PolozkaSkladu(p.getId(), p.getNazev(), p.getKoupeneMnozstvi(),
+                    combinedPolozka = new PolozkaSkladu(p.getId(), p.getSurovina(), p.getKoupeneMnozstvi(),
                         p.getAktualniMnozstvi(), p.getJednotka(), p.getCenaZaKus(), p.getMenaPenezni());
                     } else if (combinedPolozka.getJednotka().equals(p.getJednotka())) {
                     combinedPolozka.setAktualniMnozstvi(combinedPolozka.getAktualniMnozstvi() + p.getAktualniMnozstvi());
@@ -318,31 +361,31 @@ public class KafeController {
         }
         if (combinedPolozka == null) {
             for (PolozkaSkladu p : sklad) {
-                if (p.getNazev().equals(nazev)) {
-                    combinedPolozka = new PolozkaSkladu(p.getId(), p.getNazev(), p.getKoupeneMnozstvi(),
+                if (p.getSurovina() == surovina) {
+                    combinedPolozka = new PolozkaSkladu(p.getId(), p.getSurovina(), p.getKoupeneMnozstvi(),
                         p.getAktualniMnozstvi(), p.getJednotka(), p.getCenaZaKus(), p.getMenaPenezni());
                     break;
                 }
             }
         }
         if (combinedPolozka == null) {
-            combinedPolozka = new PolozkaSkladu(-1, nazev, 0, 0, "ks", BigDecimal.ZERO, "CZK");
+            combinedPolozka = new PolozkaSkladu(-1, surovina, 0, 0, "ks", BigDecimal.ZERO, "CZK");
         }
         return combinedPolozka;
     }
 
-    private void odeberSurovinuFyzicky(String nazev, int mnozstvi, List<PolozkaSkladu> skutecneSpotrebovane) {
+    private void odeberSurovinuFyzicky(Surovina surovina, int mnozstvi, List<PolozkaSkladu> skutecneSpotrebovane) {
         if (mnozstvi <= 0) return;
         int zbyva = mnozstvi;
         
         for (PolozkaSkladu s : sklad) {
-            if (s.getNazev().equals(nazev) && s.getAktualniMnozstvi() > 0) {
+            if (s.getSurovina() == surovina && s.getAktualniMnozstvi() > 0) {
                 int odebrat = Math.min(s.getAktualniMnozstvi(), zbyva);
                 s.setAktualniMnozstvi(s.getAktualniMnozstvi() - odebrat);
                 SpravceSouboru.ulozPolozkuNaSklad(s, prihlasenyUzivatel);
                 
                 // Do účtenky se poznamená přesný střípek, aby byla známa přesná původní cena a ID položky
-                skutecneSpotrebovane.add(new PolozkaSkladu(s.getId(), s.getNazev(), odebrat, odebrat, s.getJednotka(), s.getCenaZaKus(), s.getMenaPenezni()));
+                skutecneSpotrebovane.add(new PolozkaSkladu(s.getId(), s.getSurovina(), odebrat, odebrat, s.getJednotka(), s.getCenaZaKus(), s.getMenaPenezni()));
                 
                 zbyva -= odebrat;
                 if (zbyva <= 0) break;
@@ -353,25 +396,25 @@ public class KafeController {
     // Hlavní transakční metoda: 1. Odečte suroviny ze skladu, 2. Vytvoří hlavní účtenku, 3. Rozúčtuje útratu kafařům a vynuluje jim počítadla
     public void zpracujVyuctovani(int mnozstviKafe, int mnozstviMleka, int mnozstviCukr, int mnozstviCitr) {
         // Pre-validace: Zkontroluje se, zda je na skladě dostatek surovin, ještě předtím, než se do něj začne zapisovat
-        if (mnozstviKafe > getAgregovanaPolozka("Kafe").getAktualniMnozstvi()) {
+        if (mnozstviKafe > getAgregovanaPolozka(Surovina.KAFE).getAktualniMnozstvi()) {
             throw new IllegalArgumentException("Nedostatek suroviny na skladě: Káva");
         }
-        if (mnozstviMleka > getAgregovanaPolozka("Mleko").getAktualniMnozstvi()) {
+        if (mnozstviMleka > getAgregovanaPolozka(Surovina.MLEKO).getAktualniMnozstvi()) {
             throw new IllegalArgumentException("Nedostatek suroviny na skladě: Mléko");
         }
-        if (mnozstviCukr > getAgregovanaPolozka("Cukr").getAktualniMnozstvi()) {
+        if (mnozstviCukr > getAgregovanaPolozka(Surovina.CUKR).getAktualniMnozstvi()) {
             throw new IllegalArgumentException("Nedostatek suroviny na skladě: Cukr");
         }
-        if (mnozstviCitr > getAgregovanaPolozka("Kys. Citr.").getAktualniMnozstvi()) {
+        if (mnozstviCitr > getAgregovanaPolozka(Surovina.KYS_CITRONOVA).getAktualniMnozstvi()) {
             throw new IllegalArgumentException("Nedostatek suroviny na skladě: Kys. citronová");
         }
 
         List<PolozkaSkladu> skutecneSpotrebovane = new ArrayList<>();
         
-        odeberSurovinuFyzicky("Kafe", mnozstviKafe, skutecneSpotrebovane);
-        odeberSurovinuFyzicky("Mleko", mnozstviMleka, skutecneSpotrebovane);
-        odeberSurovinuFyzicky("Cukr", mnozstviCukr, skutecneSpotrebovane);
-        odeberSurovinuFyzicky("Kys. Citr.", mnozstviCitr, skutecneSpotrebovane);
+        odeberSurovinuFyzicky(Surovina.KAFE, mnozstviKafe, skutecneSpotrebovane);
+        odeberSurovinuFyzicky(Surovina.MLEKO, mnozstviMleka, skutecneSpotrebovane);
+        odeberSurovinuFyzicky(Surovina.CUKR, mnozstviCukr, skutecneSpotrebovane);
+        odeberSurovinuFyzicky(Surovina.KYS_CITRONOVA, mnozstviCitr, skutecneSpotrebovane);
 
         int pocetKavCelkem = kafari.stream().mapToInt(Kafar::getPocetVypitychKav).sum();
         Vyuctovani vyuctovani = new Vyuctovani(skutecneSpotrebovane, prihlasenyUzivatel, LocalDate.now(), pocetKavCelkem);
@@ -479,8 +522,11 @@ public class KafeController {
                     }
                 }
             } else if (section == 2 && parts.length == 7) {
-                impSklad.add(new PolozkaSkladu(Integer.parseInt(parts[0]), parts[1], Integer.parseInt(parts[2]), 
-                    Integer.parseInt(parts[3]), parts[4], new BigDecimal(parts[5]), parts[6]));
+                Surovina sur = Surovina.fromString(parts[1]);
+                if (sur != null) {
+                    impSklad.add(new PolozkaSkladu(Integer.parseInt(parts[0]), sur, Integer.parseInt(parts[2]), 
+                        Integer.parseInt(parts[3]), parts[4], new BigDecimal(parts[5]), parts[6]));
+                }
             } else if (section == 3 && parts.length > 10) {
                 Vyuctovani v = new Vyuctovani();
                 v.fromCsv(parts);

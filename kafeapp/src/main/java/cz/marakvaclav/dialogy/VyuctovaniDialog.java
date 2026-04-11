@@ -1,6 +1,7 @@
 package cz.marakvaclav.dialogy;
 
 import cz.marakvaclav.sluzby.KafeController;
+import cz.marakvaclav.entity.Surovina;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,27 +24,27 @@ public class VyuctovaniDialog extends JDialog {
         panel.add(new JLabel("Jednotka balení"));
         panel.add(new JLabel("Spotřeba"));
 
-        panel.add(new JLabel("Káva"));
-        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka("Kafe").getAktualniMnozstvi())));
-        panel.add(new JLabel(controller.getAgregovanaPolozka("Kafe").getJednotka()));
+        panel.add(new JLabel(Surovina.KAFE.getNazev()));
+        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka(Surovina.KAFE).getAktualniMnozstvi())));
+        panel.add(new JLabel(controller.getAgregovanaPolozka(Surovina.KAFE).getJednotka()));
         JTextField textFieldKafe = new JTextField(15);
         panel.add(textFieldKafe);
 
-        panel.add(new JLabel("Mléko"));
-        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka("Mleko").getAktualniMnozstvi())));
-        panel.add(new JLabel(controller.getAgregovanaPolozka("Mleko").getJednotka()));
+        panel.add(new JLabel(Surovina.MLEKO.getNazev()));
+        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka(Surovina.MLEKO).getAktualniMnozstvi())));
+        panel.add(new JLabel(controller.getAgregovanaPolozka(Surovina.MLEKO).getJednotka()));
         JTextField textFieldMleko = new JTextField(15);
         panel.add(textFieldMleko);
 
-        panel.add(new JLabel("Cukr"));
-        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka("Cukr").getAktualniMnozstvi())));
-        panel.add(new JLabel(controller.getAgregovanaPolozka("Cukr").getJednotka()));
+        panel.add(new JLabel(Surovina.CUKR.getNazev()));
+        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka(Surovina.CUKR).getAktualniMnozstvi())));
+        panel.add(new JLabel(controller.getAgregovanaPolozka(Surovina.CUKR).getJednotka()));
         JTextField textFieldCukr = new JTextField(15);
         panel.add(textFieldCukr);
 
-        panel.add(new JLabel("Kys. citronová"));
-        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka("Kys. Citr.").getAktualniMnozstvi())));
-        panel.add(new JLabel(controller.getAgregovanaPolozka("Kys. Citr.").getJednotka()));
+        panel.add(new JLabel(Surovina.KYS_CITRONOVA.getNazev()));
+        panel.add(new JLabel(String.valueOf(controller.getAgregovanaPolozka(Surovina.KYS_CITRONOVA).getAktualniMnozstvi())));
+        panel.add(new JLabel(controller.getAgregovanaPolozka(Surovina.KYS_CITRONOVA).getJednotka()));
         JTextField textFieldCitr = new JTextField(15);
         panel.add(textFieldCitr);
 

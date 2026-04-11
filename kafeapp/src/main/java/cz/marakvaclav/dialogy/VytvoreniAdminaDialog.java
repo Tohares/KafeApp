@@ -65,7 +65,20 @@ public class VytvoreniAdminaDialog extends JDialog {
                 return;
             }
             
-            admin = new Admin(textFieldLogin.getText().trim(), new String(passwordFieldHesloFirst.getPassword()), textFieldIban.getText().trim(), textFieldCz.getText().trim());
+            String iban = textFieldIban.getText().trim();
+            if (!iban.isEmpty() && !Admin.isValidIBAN(iban)) {
+                JOptionPane.showMessageDialog(this, "Neplatný formát IBAN!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String czAccount = textFieldCz.getText().trim();
+            if (!Admin.isCzAccountConsistentWithIban(czAccount, iban)) {
+                JOptionPane.showMessageDialog(this, "České číslo účtu neodpovídá zadanému IBANu!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            String cleanIban = iban.replaceAll("\\s+", "").toUpperCase();
+            admin = new Admin(textFieldLogin.getText().trim(), new String(passwordFieldHesloFirst.getPassword()), cleanIban, czAccount);
             succeeded = true;
             dispose();
         });

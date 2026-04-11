@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 public class PolozkaSkladu {
     private static int count = 0;
     private int id;
-    private String nazev;
+    private Surovina surovina;
     private int koupeneMnozstvi;
     private int aktualniMnozstvi;
     private String jednotka;
@@ -19,7 +19,7 @@ public class PolozkaSkladu {
     public PolozkaSkladu() {
         id = count;
         count++;
-        nazev = "nezadano";
+        surovina = Surovina.KAFE;
         koupeneMnozstvi = 0;
         aktualniMnozstvi = 0;
         jednotka = "nezadano";
@@ -27,10 +27,10 @@ public class PolozkaSkladu {
         menaPenezni = "CZK";
     }
 
-    public PolozkaSkladu(String nazev, int koupeneMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(Surovina surovina, int koupeneMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         id = count;
         count++;
-        this.nazev = nazev;
+        this.surovina = surovina;
         this.koupeneMnozstvi = koupeneMnozstvi;
         this.aktualniMnozstvi = koupeneMnozstvi;
         this.jednotka = jednotka;
@@ -38,12 +38,12 @@ public class PolozkaSkladu {
         this.menaPenezni = menaPenezni;
     }
 
-    public PolozkaSkladu(int id, String nazev, int koupeneMnozstvi, int aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
+    public PolozkaSkladu(int id, Surovina surovina, int koupeneMnozstvi, int aktualniMnozstvi, String jednotka, BigDecimal cenaZaKus, String menaPenezni) {
         this.id = id;
         if (id > count) {
             count = id + 1;
         }
-        this.nazev = nazev;
+        this.surovina = surovina;
         this.koupeneMnozstvi = koupeneMnozstvi;
         this.aktualniMnozstvi = aktualniMnozstvi;
         this.jednotka = jednotka;
@@ -55,12 +55,12 @@ public class PolozkaSkladu {
         return id;
     }
 
-    public String getNazev() {
-        return nazev;
+    public Surovina getSurovina() {
+        return surovina;
     }
 
-    public void setNazev(String nazev) {
-        this.nazev = nazev;
+    public void setSurovina(Surovina surovina) {
+        this.surovina = surovina;
     }
 
     public int getKoupeneMnozstvi() {
@@ -92,7 +92,7 @@ public class PolozkaSkladu {
     }
 
     public String toCsv() {
-        return id + ";" + nazev + ";" + koupeneMnozstvi + ";" + aktualniMnozstvi + ";" + jednotka + ";" + cenaZaKus + ";" + menaPenezni;
+        return id + ";" + surovina.getNazev() + ";" + koupeneMnozstvi + ";" + aktualniMnozstvi + ";" + jednotka + ";" + cenaZaKus + ";" + menaPenezni;
     }
 
     public BigDecimal getCenaZaKus() {

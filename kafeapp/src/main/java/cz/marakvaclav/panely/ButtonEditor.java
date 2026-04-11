@@ -24,8 +24,8 @@ public class ButtonEditor extends DefaultCellEditor {
         
         button.addActionListener(e -> {
             fireEditingStopped(); 
-            // Pokud účtenka ještě nebyla zaplacena, kliknutím se otevře okno s platebními údaji a QR kódem
-            if (vyuctovani != null && !vyuctovani.getStavPlatby()) {
+            // Kliknutím se otevře okno s platebními údaji (pokud už je zaplacena, otevře se jen pro čtení)
+            if (vyuctovani != null) {
                 gui.otevriPlatbu(vyuctovani);
             }
         });
@@ -39,7 +39,7 @@ public class ButtonEditor extends DefaultCellEditor {
         this.vyuctovani = gui.najdiVyuctovaniZRadku(modelRow);
         
         boolean zaplaceno = (value instanceof Boolean) ? (Boolean) value : false;
-        button.setText(zaplaceno ? "✓ Uhrazeno" : "Zaplatit");
+        button.setText(zaplaceno ? "✓ Detail platby" : "Zaplatit");
         
         return button;
     }

@@ -1,6 +1,7 @@
 package cz.marakvaclav.dialogy;
 
 import cz.marakvaclav.entity.PolozkaSkladu;
+import cz.marakvaclav.entity.Surovina;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,8 +30,7 @@ public class PolozkaDialog extends JDialog {
         JPanel panel = new JPanel(new GridLayout(rows, 2, 10, 10));
 
         panel.add(new JLabel("Název:"));
-        String[] nazvy = {"Kafe", "Mleko", "Cukr", "Kys. Citr."};
-        JComboBox<String> comboBoxNazev = new JComboBox<>(nazvy);
+        JComboBox<Surovina> comboBoxNazev = new JComboBox<>(Surovina.values());
         panel.add(comboBoxNazev);
 
         panel.add(new JLabel(isEditMode ? "Koupené množství:" : "Počet balení:"));
@@ -53,32 +53,19 @@ public class PolozkaDialog extends JDialog {
 
         // Dynamicky upravuje nabídku měrných jednotek
         comboBoxNazev.addActionListener(e -> {
-            String nazev = (String) comboBoxNazev.getSelectedItem();
+            Surovina vybrana = (Surovina) comboBoxNazev.getSelectedItem();
             comboBoxJednotka.removeAllItems();
-            comboBoxJednotka.setEditable(false);
-            if (nazev != null) {
-                switch (nazev) {
-                    case "Kafe":
-                        comboBoxJednotka.addItem("kg");
-                        comboBoxJednotka.addItem("0.5kg");
-                        break;
-                    case "Mleko":
-                        comboBoxJednotka.addItem("l");
-                        break;
-                    case "Cukr":
-                        comboBoxJednotka.addItem("kg");
-                        break;
-                    case "Kys. Citr.":
-                        comboBoxJednotka.setEditable(true);
-                        break;
+            if (vybrana != null) {
+                comboBoxJednotka.setEditable(vybrana.isVolitelnaJednotka());
+                for (String jednotka : vybrana.getVychoziJednotky()) {
+                    comboBoxJednotka.addItem(jednotka);
                 }
             }
         });
 
         // Vynutí se načtení jednotek a předvýběr výchozích/původních hodnot
         if (isEditMode) {
-            comboBoxNazev.setSelectedIndex(-1);
-            comboBoxNazev.setSelectedItem(polozka.getNazev());
+            comboBoxNazev.setSelectedItem(polozka.getSurovina());
             comboBoxJednotka.setSelectedItem(polozka.getJednotka());
         } else {
             comboBoxNazev.setSelectedIndex(0);
@@ -126,14 +113,15 @@ public class PolozkaDialog extends JDialog {
                     return;
                 }
 
+                Surovina vybranaSurovina = (Surovina) vybranyNazev;
                 if (isEditMode) {
-                    polozka.setNazev(vybranyNazev.toString().trim());
+                    polozka.setSurovina(vybranaSurovina);
                     polozka.setJednotka(vybranaJednotka.toString().trim());
                     polozka.setKoupeneMnozstvi(koupene);
                     polozka.setAktualniMnozstvi(aktualni);
                     polozka.setCenaZaKus(cena);
                 } else {
-                    polozka = new PolozkaSkladu(vybranyNazev.toString().trim(), koupene, vybranaJednotka.toString().trim(), cena, textFieldMena.getText());
+                    polozka = new PolozkaSkladu(vybranaSurovina, koupene, vybranaJednotka.toString().trim(), cena, textFieldMena.getText());
                 }
                 
                 succeeded = true;

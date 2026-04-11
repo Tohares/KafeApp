@@ -612,7 +612,9 @@ public class KafeGui extends JFrame {
     }
 
     public void otevriPlatbu(Vyuctovani v) {
-        PlatbaDialog platbaDialog = new PlatbaDialog(this, v, controller.getAdmin(), controller.getPrihlasenyUzivatel());
+        PlatbaDialog platbaDialog = new PlatbaDialog(this, v, controller.getAdmin(), controller.getPrihlasenyUzivatel(), (iban, cz) -> {
+            controller.aktualizujPlatebniUdajeAdmina(iban, cz);
+        });
         platbaDialog.setVisible(true);
         if (platbaDialog.isSucceeded()) {
             controller.zpracujPlatbu(v);

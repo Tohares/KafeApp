@@ -27,6 +27,8 @@ public class Vyuctovani {
     BigDecimal cenaZaVypiteKavy = null;
     boolean stavPlatby = false;
     LocalDate datumPlatby = null;
+    private String platebniUcetIBAN = null;
+    private String platebniUcetCZ = null;
 
     public Vyuctovani() {}
 
@@ -62,8 +64,11 @@ public class Vyuctovani {
     }
 
     public String vypisPlatebniUdaje(Admin admin) {
-        if (admin.getCisloUctuIBAN() == null || admin.getCisloUctuIBAN().isEmpty()) {
-        return "Chyba: Admin nemá nastavené číslo účtu!";
+        String iban = (platebniUcetIBAN != null && !platebniUcetIBAN.isEmpty()) ? platebniUcetIBAN : admin.getCisloUctuIBAN();
+        String cz = (platebniUcetCZ != null && !platebniUcetCZ.isEmpty()) ? platebniUcetCZ : admin.getCisloUctuCZ();
+
+        if (iban == null || iban.isEmpty()) {
+            return "Chyba: Nebylo nalezeno číslo účtu příjemce!";
         }
 
         String castkaStr = cenaZaVypiteKavy.setScale(2, RoundingMode.HALF_UP).toPlainString();
@@ -71,7 +76,10 @@ public class Vyuctovani {
         StringBuilder sb = new StringBuilder();
         sb.append("Příjemce: ").append(admin.getLogin()).append("\n");
         sb.append("Částka: ").append(castkaStr).append(" CZK\n");
-        sb.append("Číslo účtu: ").append(admin.getCisloUctuCZ()).append("\n");
+        sb.append("Číslo účtu (IBAN): ").append(iban).append("\n");
+        if (cz != null && !cz.isEmpty()) {
+            sb.append("Číslo účtu (CZ): ").append(cz).append("\n");
+        }
         sb.append("Zpráva pro příjemce: KAFE-").append(login).append("-").append(datumVystaveni).append("\n");
         
         return sb.toString();
@@ -79,8 +87,11 @@ public class Vyuctovani {
 
     // Vygeneruje QR kód pro mobilní bankovnictví na základě standardu SPAYD (Short Payment Descriptor)
     public BufferedImage vytvorQRKodProPlatbu(Admin admin) {
+        String iban = (platebniUcetIBAN != null && !platebniUcetIBAN.isEmpty()) ? platebniUcetIBAN : admin.getCisloUctuIBAN();
+        if (iban == null || iban.isEmpty()) return null;
+
         // Sestavení platebního řetězce podle českého bankovního standardu SPAYD (Short Payment Descriptor)
-        String messageQR = "SPD*1.0*ACC:" + admin.getCisloUctuIBAN() + 
+        String messageQR = "SPD*1.0*ACC:" + iban + 
                            "*AM:" + cenaZaVypiteKavy.setScale(2, RoundingMode.HALF_UP).toPlainString() + 
                            "*CC:CZK*MSG:KAFE-" + login + 
                            "-" + datumVystaveni + 
@@ -144,6 +155,12 @@ public class Vyuctovani {
         this.datumPlatby = datumPlatby;
     }
 
+    public String getPlatebniUcetIBAN() { return platebniUcetIBAN; }
+    public void setPlatebniUcetIBAN(String platebniUcetIBAN) { this.platebniUcetIBAN = platebniUcetIBAN; }
+    
+    public String getPlatebniUcetCZ() { return platebniUcetCZ; }
+    public void setPlatebniUcetCZ(String platebniUcetCZ) { this.platebniUcetCZ = platebniUcetCZ; }
+
     public String toCsv() {
         StringBuilder sb = new StringBuilder();
         sb.append(login).append(";");
@@ -155,6 +172,8 @@ public class Vyuctovani {
         sb.append(cenaZaVypiteKavy).append(";");
         sb.append(stavPlatby).append(";");
         sb.append(datumPlatby).append(";");
+        sb.append(platebniUcetIBAN).append(";");
+        sb.append(platebniUcetCZ).append(";");
 
         for (PolozkaSkladu polozka : spotrebovanePolozky) {
             sb.append(polozka.toCsv()).append(";");
@@ -189,10 +208,16 @@ public class Vyuctovani {
         } else {
             datumPlatby = null;
         }
+        
+        platebniUcetIBAN = line[9].equals("null") ? null : line[9];
+        platebniUcetCZ = line[10].equals("null") ? null : line[10];
 
         spotrebovanePolozky = new ArrayList<>();
-        for (int i = 9; i < line.length; i += 7) {
-            PolozkaSkladu polozka = new PolozkaSkladu(Integer.parseInt(line[i]), line[i+1], Integer.parseInt(line[i+2]), 
+        for (int i = 11; i < line.length; i += 7) {
+            Surovina surovina = Surovina.fromString(line[i+1]);
+            if (surovina == null) throw new IllegalArgumentException("Neznámý druh suroviny: " + line[i+1]);
+            
+            PolozkaSkladu polozka = new PolozkaSkladu(Integer.parseInt(line[i]), surovina, Integer.parseInt(line[i+2]), 
                 Integer.parseInt(line[i+3]), line[i+4], new BigDecimal(line[i+5]), line[i+6]);
             spotrebovanePolozky.add(polozka);
         }
