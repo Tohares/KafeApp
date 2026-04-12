@@ -1,6 +1,6 @@
 package cz.marakvaclav.dialogy;
 
-import cz.marakvaclav.sluzby.KafeController;
+import cz.marakvaclav.sluzby.KafeUIController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +14,7 @@ import java.io.File;
 public class ImportHistorieVsehoDialog extends JDialog {
     private boolean succeeded = false;
 
-    public ImportHistorieVsehoDialog(Frame parent, KafeController controller) {
+    public ImportHistorieVsehoDialog(Frame parent, KafeUIController controller) {
         super(parent, "Import dat ze zálohy", true);
         setLayout(new BorderLayout(10, 10));
 
@@ -65,7 +65,7 @@ public class ImportHistorieVsehoDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
-    private void importData(File file, KafeController controller, boolean isNuclear) {
+    private void importData(File file, KafeUIController controller, boolean isNuclear) {
         try {
             controller.importDatZeZalohy(file, isNuclear);
 

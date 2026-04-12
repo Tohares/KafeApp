@@ -1,8 +1,8 @@
 # KafeApp
 
 Aplikace pro evidenci spotřeby kávy, mléka, cukru, kyseliny citronové a vyúčtování.
-
-## Neintuitivní část GUI - v admin view Kafaři lze upravit počet káv naklikaných kafařem - dvojklik do buňky, případně klik a psát.
+Lze rozúčtovat pouze celá balení. Logika je taková, že po spotřebe balíku kávy (0,5 nebo 1 kg) se sečte se spotřebou mléka
+a jednou za čas nebo dle potřeby je možno přičíst i spotřebovaný cukr nebo kyselinu citronovou, které nemají na výslednou cenu takový vliv.
 
 ## Jak aplikaci otestovat (Vzorová data)
 V repozitáři se nachází soubor `example_data.backup`, který obsahuje předpřipravené uživatele, sklad a historii.

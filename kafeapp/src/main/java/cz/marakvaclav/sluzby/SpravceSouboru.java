@@ -8,29 +8,40 @@ import java.net.InetAddress;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.nio.charset.StandardCharsets;
 
 // Třída zajišťující veškeré operace se soubory (CSV), distribuované zámky (lock) a kontrolu integrity dat (podpisy).
 public class SpravceSouboru {
-    private static final String SOUBOR_DAT_KAFARI = "kafari.csv";
-    private static final String SOUBOR_LOCK_KAFARI = "kafari.lock";
-    private static final String SOUBOR_TMP_KAFARI = "kafari.csv.tmp";
-    private static final String SOUBOR_DAT_SKLAD = "sklad.csv";
-    private static final String SOUBOR_LOCK_SKLAD = "sklad.lock";
-    private static final String SOUBOR_TMP_SKLAD = "sklad.csv.tmp";
-    private static final String SOUBOR_DAT_VYUCTOVANI = "vyuctovani.csv";
-    private static final String SOUBOR_LOCK_VYUCTOVANI = "vyuctovani.lock";
-    private static final String SOUBOR_TMP_VYUCTOVANI = "vyuctovani.csv.tmp";
-    private static final String SOUBOR_DAT_LOG = "kafeapp.log";
-    private static final String SOUBOR_LOCK_LOG = "kafeapp.lock";
-    private static final String SOUBOR_KONFIGURACE = "kafeapp.properties";
+    public static final String HEADER_KAFARI = "===KAFARI===";
+    public static final String HEADER_SKLAD = "===SKLAD===";
+    public static final String HEADER_VYUCTOVANI = "===VYUCTOVANI===";
+    public static final String HEADER_SIGNATURE = "===SIGNATURE===";
 
-    public static List<String> chybyIntegrity = new ArrayList<>();
+    private String souborDatKafari = "kafari.csv";
+    private String souborLockKafari = "kafari.lock";
+    private String souborTmpKafari = "kafari.csv.tmp";
+    
+    private String souborDatSklad = "sklad.csv";
+    private String souborLockSklad = "sklad.lock";
+    private String souborTmpSklad = "sklad.csv.tmp";
+    
+    private String souborDatVyuctovani = "vyuctovani.csv";
+    private String souborLockVyuctovani = "vyuctovani.lock";
+    private String souborTmpVyuctovani = "vyuctovani.csv.tmp";
+    
+    private String souborDatLog = "kafeapp.log";
+    private String souborLockLog = "kafeapp.lock";
+    
+    private String souborKonfigurace;
 
-    private static String pracovniSlozka = "";
+    private List<String> chybyIntegrity = new ArrayList<>();
+
+    private String pracovniSlozka = "";
 
     private static String cachedHostName = "unknown";
     // Cachování názvu PC. Volání getHostName() může na některých sítích trvat sekundy a zablokovat EDT (grafické) vlákno
@@ -40,6 +51,14 @@ public class SpravceSouboru {
         } catch (Exception e) {}
     }
 
+    public List<String> getChybyIntegrity() {
+        return java.util.Collections.unmodifiableList(chybyIntegrity);
+    }
+
+    public void vymazChybyIntegrity() {
+        chybyIntegrity.clear();
+    }
+
     // Vlastní výjimka pro rozeznání nedostupného/odpojeného disku od jiných logických chyb
     public static class DatabaseUnavailableException extends RuntimeException {
         public DatabaseUnavailableException(String message) {
@@ -47,39 +66,70 @@ public class SpravceSouboru {
         }
     }
 
-    public static void setPracovniSlozka(String slozka) {
+    public SpravceSouboru() {
+        this("kafeapp.properties");
+    }
+
+    public SpravceSouboru(String souborKonfigurace) {
+        this.souborKonfigurace = souborKonfigurace;
+    }
+
+    public String getSouborKonfigurace() {
+        return souborKonfigurace;
+    }
+
+    public void setPracovniSlozka(String slozka) {
         pracovniSlozka = slozka;
         ulozKonfiguraci();
     }
 
-    public static String getPracovniSlozka() {
+    public String getPracovniSlozka() {
         return pracovniSlozka;
     }
 
-    public static void nactiKonfiguraci() {
-        File configFile = new File(SOUBOR_KONFIGURACE);
+    public void nactiKonfiguraci() {
+        File configFile = new File(souborKonfigurace);
         if (configFile.exists()) {
-            try (java.io.FileReader fr = new java.io.FileReader(configFile)) {
-                java.util.Properties props = new java.util.Properties();
+            try (Reader fr = Files.newBufferedReader(configFile.toPath(), StandardCharsets.UTF_8)) {
+                Properties props = new Properties();
                 props.load(fr);
                 pracovniSlozka = props.getProperty("pracovniSlozka", "");
-            } catch (Exception e) {
+                
+                souborDatKafari = props.getProperty("souborKafari", "kafari.csv");
+                souborLockKafari = souborDatKafari + ".lock";
+                souborTmpKafari = souborDatKafari + ".tmp";
+                
+                souborDatSklad = props.getProperty("souborSklad", "sklad.csv");
+                souborLockSklad = souborDatSklad + ".lock";
+                souborTmpSklad = souborDatSklad + ".tmp";
+                
+                souborDatVyuctovani = props.getProperty("souborVyuctovani", "vyuctovani.csv");
+                souborLockVyuctovani = souborDatVyuctovani + ".lock";
+                souborTmpVyuctovani = souborDatVyuctovani + ".tmp";
+                
+                souborDatLog = props.getProperty("souborLog", "kafeapp.log");
+                souborLockLog = souborDatLog + ".lock";
+            } catch (IOException e) {
                 System.err.println("Nelze načíst konfiguraci: " + e.getMessage());
             }
         }
     }
 
-    public static void ulozKonfiguraci() {
-        try (java.io.FileWriter fw = new java.io.FileWriter(SOUBOR_KONFIGURACE)) {
-            java.util.Properties props = new java.util.Properties();
+    public void ulozKonfiguraci() {
+        try (Writer fw = Files.newBufferedWriter(Paths.get(souborKonfigurace), StandardCharsets.UTF_8)) {
+            Properties props = new Properties();
             props.setProperty("pracovniSlozka", pracovniSlozka == null ? "" : pracovniSlozka);
+            props.setProperty("souborKafari", souborDatKafari);
+            props.setProperty("souborSklad", souborDatSklad);
+            props.setProperty("souborVyuctovani", souborDatVyuctovani);
+            props.setProperty("souborLog", souborDatLog);
             props.store(fw, "Nastaveni KafeApp (pokud je pracovniSlozka prazdna, uklada se k programu)");
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Nelze uložit konfiguraci: " + e.getMessage());
         }
     }
 
-    private static Path getCesta(String soubor) {
+    private Path getCesta(String soubor) {
         if (pracovniSlozka == null || pracovniSlozka.isEmpty()) {
             return Paths.get(soubor);
         }
@@ -87,7 +137,7 @@ public class SpravceSouboru {
     }
 
     // Uloží nebo zaktualizuje záznam o vyúčtování do souboru pomocí bezpečného atomického zápisu
-    public static void ulozVyuctovani(Vyuctovani vyuctovani, String prihlasenyUzivatel) {
+    public void ulozVyuctovani(Vyuctovani vyuctovani, String prihlasenyUzivatel) {
         String identifikatorUctenky = vyuctovani.getLogin() + ";" + 
                                       vyuctovani.getDatumVystaveni() + ";" + 
                                       vyuctovani.getPocetUctovanychKavCelkem() + ";" + 
@@ -95,43 +145,43 @@ public class SpravceSouboru {
                                       vyuctovani.getCenaJedneKavy() + ";" + 
                                       vyuctovani.getPocetVypitychKav() + ";" + 
                                       vyuctovani.getCenaZaVypiteKavy() + ";";
-        aktualizujNeboPridejRadek(SOUBOR_DAT_VYUCTOVANI, SOUBOR_TMP_VYUCTOVANI, SOUBOR_LOCK_VYUCTOVANI, prihlasenyUzivatel, identifikatorUctenky, vyuctovani.toCsv());
+        aktualizujNeboPridejRadek(souborDatVyuctovani, souborTmpVyuctovani, souborLockVyuctovani, prihlasenyUzivatel, identifikatorUctenky, vyuctovani.toCsv());
     }
 
-    public static void prepisVsechnaVyuctovani(List<Vyuctovani> vyuctovaniList, String prihlasenyUzivatel) {
-        if (!ziskejZamek(SOUBOR_LOCK_VYUCTOVANI, prihlasenyUzivatel)) {
-            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_VYUCTOVANI + " je dlouhodobě blokován.");
+    public void prepisVsechnaVyuctovani(List<Vyuctovani> vyuctovaniList, String prihlasenyUzivatel) {
+        if (!ziskejZamek(souborLockVyuctovani, prihlasenyUzivatel)) {
+            throw new DatabaseUnavailableException("Soubor " + souborDatVyuctovani + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
             for (Vyuctovani v : vyuctovaniList) {
                 radky.add(v.toCsv());
             }
-            Path cestaTMP = getCesta(SOUBOR_TMP_VYUCTOVANI);
+            Path cestaTMP = getCesta(souborTmpVyuctovani);
             Files.write(cestaTMP, radky);
-            Path cestaKDatum = getCesta(SOUBOR_DAT_VYUCTOVANI);
+            Path cestaKDatum = getCesta(souborDatVyuctovani);
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            podepisSoubor(cestaKDatum, SOUBOR_DAT_VYUCTOVANI + ".sig");
+            podepisSoubor(cestaKDatum, souborDatVyuctovani + ".sig");
         } catch (IOException e) {
             throw new DatabaseUnavailableException("Chyba při přepisu vyúčtování: " + e.getMessage());
         } finally {
-            uvolniZamek(SOUBOR_LOCK_VYUCTOVANI);
+            uvolniZamek(souborLockVyuctovani);
         }
     }
 
-    public static List<Vyuctovani> nactiVyuctovani() {
-        List<String> radky = nactiRadkyZeSouboru(SOUBOR_DAT_VYUCTOVANI, SOUBOR_LOCK_VYUCTOVANI, "appStart");
+    public List<Vyuctovani> nactiVyuctovani() {
+        List<String> radky = nactiRadkyZeSouboru(souborDatVyuctovani, souborLockVyuctovani, "appStart");
         if (radky == null) return null;
 
         List<Vyuctovani> seznamVyuctovani = new ArrayList<>();
         for (String radek : radky) {
             String[] vyuctovaniLine = radek.split(";");
-            if (vyuctovaniLine.length > 10) {
+            if (vyuctovaniLine.length >= 12) {
                 try {
                     Vyuctovani vyuctovani = new Vyuctovani();
                     vyuctovani.fromCsv(vyuctovaniLine);
                     seznamVyuctovani.add(vyuctovani);
-                } catch (Exception e) {
+                } catch (DateTimeParseException | IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
                     zaznamenejChybuIntegrity("Poškozený řádek vyúčtování (přeskočeno): " + radek);
                 }
             }
@@ -139,31 +189,34 @@ public class SpravceSouboru {
         return seznamVyuctovani;
     }
     
-    public static void ulozKafare(Kafar kafar, String prihlasenyUzivatel) {
-        aktualizujNeboPridejRadek(SOUBOR_DAT_KAFARI, SOUBOR_TMP_KAFARI, SOUBOR_LOCK_KAFARI, prihlasenyUzivatel, kafar.getLogin() + ";", kafar.toCsv());
+    public void ulozKafare(Kafar kafar, String prihlasenyUzivatel) {
+        aktualizujNeboPridejRadek(souborDatKafari, souborTmpKafari, souborLockKafari, prihlasenyUzivatel, kafar.getLogin() + ";", kafar.toCsv());
     }
 
-    public static List<Kafar> nactiKafare() {
-        List<String> radky = nactiRadkyZeSouboru(SOUBOR_DAT_KAFARI, SOUBOR_LOCK_KAFARI, "appStart");
+    public List<Kafar> nactiKafare() {
+        List<String> radky = nactiRadkyZeSouboru(souborDatKafari, souborLockKafari, "appStart");
         if (radky == null) return null;
 
         List<Kafar> kafari = new ArrayList<>();
         for (String radek : radky) {
             String[] KafarLine = radek.split(";");
-            if (KafarLine.length >= 3) {
+            if (KafarLine.length >= 6) {
                 try {
                     // Pokud jde 3. sloupec převést na číslo, je to Kafař (má tam počet káv)
                     int pocetVypitychKav = Integer.parseInt(KafarLine[2]);
                     if (pocetVypitychKav < 0) throw new IllegalArgumentException("Záporný počet káv");
                     String login = KafarLine[0];
                     String hesloHash = KafarLine[1];
-                    Kafar kafar = new Kafar(login, "");
+                    Kafar kafar = new Kafar(login, new char[0]);
                     kafar.setHesloHash(hesloHash);
                     kafar.setPocetVypitychKav(pocetVypitychKav);
+                    kafar.setVyzadujeZmenuHesla(Boolean.parseBoolean(KafarLine[3]));
+                    kafar.setZruseneKavy(Integer.parseInt(KafarLine[4]));
+                    kafar.setAktivni(Boolean.parseBoolean(KafarLine[5]));
                     kafari.add(kafar);
                 } catch (NumberFormatException e) {
                     // Není to číslo (je to IBAN), takže to je Administrátor. Přeskočí se.
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
                     zaznamenejChybuIntegrity("Poškozená data kafaře (přeskočeno): " + radek);
                 }
             }
@@ -171,18 +224,18 @@ public class SpravceSouboru {
         return kafari;
     }
 
-    public static void ulozAdmina(Admin admin, String prihlasenyUzivatel) {
-        aktualizujNeboPridejRadek(SOUBOR_DAT_KAFARI, SOUBOR_TMP_KAFARI, SOUBOR_LOCK_KAFARI, prihlasenyUzivatel, admin.getLogin() + ";", admin.toCsv());
+    public void ulozAdmina(Admin admin, String prihlasenyUzivatel) {
+        aktualizujNeboPridejRadek(souborDatKafari, souborTmpKafari, souborLockKafari, prihlasenyUzivatel, admin.getLogin() + ";", admin.toCsv());
     }
 
-    public static Admin nactiAdmina() {
+    public Admin nactiAdmina() {
         // Explicitní kontrola dostupnosti cílové složky před jakýmkoliv čtením (odpojený disk atd.)
         Path cestaSlozky = getCesta("");
         if (pracovniSlozka != null && !pracovniSlozka.isEmpty() && !Files.exists(cestaSlozky)) {
             throw new DatabaseUnavailableException("Složka s databází není dostupná: " + pracovniSlozka);
         }
 
-        List<String> radky = nactiRadkyZeSouboru(SOUBOR_DAT_KAFARI, SOUBOR_LOCK_KAFARI, "appStart");
+        List<String> radky = nactiRadkyZeSouboru(souborDatKafari, souborLockKafari, "appStart");
         if (radky == null || radky.isEmpty()) return null; // Null/prázdné nyní znamená pouze skutečně chybějící soubor
 
         for (String radek : radky) {
@@ -197,12 +250,12 @@ public class SpravceSouboru {
                         String hash = parts[1];
                         String iban = parts[2];
                         String cz = parts[3];
-                        Admin admin = new Admin(login, "");
+                        Admin admin = new Admin(login, new char[0]);
                         admin.setHesloHash(hash);
                         admin.setCisloUctuIBAN(iban);
                         admin.setCisloUctuCZ(cz);
                         return admin;
-                    } catch (Exception ex) {
+                    } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException ex) {
                         zaznamenejChybuIntegrity("Poškozená data administrátora: " + radek);
                     }
                 }
@@ -211,9 +264,9 @@ public class SpravceSouboru {
         return null;
     }
 
-    public static void prepisVsechnyUzivatele(List<Kafar> kafari, Admin admin, String prihlasenyUzivatel) {
-        if (!ziskejZamek(SOUBOR_LOCK_KAFARI, prihlasenyUzivatel)) {
-            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_KAFARI + " je dlouhodobě blokován.");
+    public void prepisVsechnyUzivatele(List<Kafar> kafari, Admin admin, String prihlasenyUzivatel) {
+        if (!ziskejZamek(souborLockKafari, prihlasenyUzivatel)) {
+            throw new DatabaseUnavailableException("Soubor " + souborDatKafari + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
@@ -223,45 +276,45 @@ public class SpravceSouboru {
             for (Kafar k : kafari) {
                 radky.add(k.toCsv());
             }
-            Path cestaTMP = getCesta(SOUBOR_TMP_KAFARI);
+            Path cestaTMP = getCesta(souborTmpKafari);
             Files.write(cestaTMP, radky);
-            Path cestaKDatum = getCesta(SOUBOR_DAT_KAFARI);
+            Path cestaKDatum = getCesta(souborDatKafari);
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            podepisSoubor(cestaKDatum, SOUBOR_DAT_KAFARI + ".sig");
+            podepisSoubor(cestaKDatum, souborDatKafari + ".sig");
         } catch (IOException e) {
             throw new DatabaseUnavailableException("Chyba při přepisu kafařů (disk odpojen?): " + e.getMessage());
         } finally {
-            uvolniZamek(SOUBOR_LOCK_KAFARI);
+            uvolniZamek(souborLockKafari);
         }
     }
 
-    public static void ulozPolozkuNaSklad(PolozkaSkladu polozka, String prihlasenyUzivatel) {
-        aktualizujNeboPridejRadek(SOUBOR_DAT_SKLAD, SOUBOR_TMP_SKLAD, SOUBOR_LOCK_SKLAD, prihlasenyUzivatel, polozka.getId() + ";", polozka.toCsv());
+    public void ulozPolozkuNaSklad(PolozkaSkladu polozka, String prihlasenyUzivatel) {
+        aktualizujNeboPridejRadek(souborDatSklad, souborTmpSklad, souborLockSklad, prihlasenyUzivatel, polozka.getId() + ";", polozka.toCsv());
     }
 
-    public static void prepisCelySklad(List<PolozkaSkladu> skladList, String prihlasenyUzivatel) {
-        if (!ziskejZamek(SOUBOR_LOCK_SKLAD, prihlasenyUzivatel)) {
-            throw new DatabaseUnavailableException("Soubor " + SOUBOR_DAT_SKLAD + " je dlouhodobě blokován.");
+    public void prepisCelySklad(List<PolozkaSkladu> skladList, String prihlasenyUzivatel) {
+        if (!ziskejZamek(souborLockSklad, prihlasenyUzivatel)) {
+            throw new DatabaseUnavailableException("Soubor " + souborDatSklad + " je dlouhodobě blokován.");
         }
         try {
             List<String> radky = new ArrayList<>();
             for (PolozkaSkladu p : skladList) {
                 radky.add(p.toCsv());
             }
-            Path cestaTMP = getCesta(SOUBOR_TMP_SKLAD);
+            Path cestaTMP = getCesta(souborTmpSklad);
             Files.write(cestaTMP, radky);
-            Path cestaKDatum = getCesta(SOUBOR_DAT_SKLAD);
+            Path cestaKDatum = getCesta(souborDatSklad);
             Files.move(cestaTMP, cestaKDatum, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            podepisSoubor(cestaKDatum, SOUBOR_DAT_SKLAD + ".sig");
+            podepisSoubor(cestaKDatum, souborDatSklad + ".sig");
         } catch (IOException e) {
             throw new DatabaseUnavailableException("Chyba při přepisu skladu (disk odpojen?): " + e.getMessage());
         } finally {
-            uvolniZamek(SOUBOR_LOCK_SKLAD);
+            uvolniZamek(souborLockSklad);
         }
     }
 
-    public static List<PolozkaSkladu> nactiSklad() {
-        List<String> radky = nactiRadkyZeSouboru(SOUBOR_DAT_SKLAD, SOUBOR_LOCK_SKLAD, "appStart");
+    public List<PolozkaSkladu> nactiSklad() {
+        List<String> radky = nactiRadkyZeSouboru(souborDatSklad, souborLockSklad, "appStart");
         if (radky == null) return null;
 
         List<PolozkaSkladu> sklad = new ArrayList<>();
@@ -287,7 +340,7 @@ public class SpravceSouboru {
                     
                     PolozkaSkladu polozka = new PolozkaSkladu(id, surovina, koupeneMnozstvi, aktualniMnozstvi, jednotka, cenaZaKus, menaPenezni);
                     sklad.add(polozka);
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
                     zaznamenejChybuIntegrity("Poškozený řádek skladu (přeskočeno): " + radek);
                 }
             }
@@ -296,7 +349,7 @@ public class SpravceSouboru {
     }
 
     // Metoda pro přidání nebo úpravu existujícího řádku (tzv. Upsert) využívající bezpečný atomický zápis přes dočasný soubor
-    private static void aktualizujNeboPridejRadek(String nazevSouboru, String nazevTmp, String nazevLock, String prihlasenyUzivatel, String prefixKHledani, String novyRadek) {
+    private void aktualizujNeboPridejRadek(String nazevSouboru, String nazevTmp, String nazevLock, String prihlasenyUzivatel, String prefixKHledani, String novyRadek) {
         if (!ziskejZamek(nazevLock, prihlasenyUzivatel)) {
             throw new DatabaseUnavailableException("Soubor " + nazevSouboru + " je blokován jiným procesem.");
         }
@@ -335,7 +388,7 @@ public class SpravceSouboru {
         }
     }
 
-    private static List<String> nactiRadkyZeSouboru(String nazevSouboru, String nazevLock, String prihlasenyUzivatel) {
+    private List<String> nactiRadkyZeSouboru(String nazevSouboru, String nazevLock, String prihlasenyUzivatel) {
         if (!ziskejZamek(nazevLock, prihlasenyUzivatel)) {
             throw new DatabaseUnavailableException("Soubor " + nazevSouboru + " je blokován jiným procesem.");
         }
@@ -359,7 +412,7 @@ public class SpravceSouboru {
     }
 
     // Pokusí se vytvořit .lock soubor pro zajištění exkluzivního přístupu (ochrana proti souběžnému zápisu více instancí)
-    private static boolean zkusZiskatZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {
+    private boolean zkusZiskatZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {
         try {
             Path lockPath = getCesta(nazevZamekSouboru);
             if (Files.exists(lockPath)) {
@@ -383,13 +436,13 @@ public class SpravceSouboru {
         } catch (FileAlreadyExistsException e) {
             // Očekávaný stav - zámek právě drží jiná instance
             return false;
-        } catch (Exception e) {
+        } catch (IOException | NumberFormatException e) {
             System.err.println("Nepodařilo se získat zámek " + nazevZamekSouboru + ": " + e.getMessage());
             return false;
         }
     }
 
-    private static boolean ziskejZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {
+    private boolean ziskejZamek(String nazevZamekSouboru, String prihlasenyUzivatel) {
         // První rychlý pokus (většinou projde hned bez zobrazení oken)
         if (zkusZiskatZamek(nazevZamekSouboru, prihlasenyUzivatel)) {
             return true;
@@ -402,7 +455,7 @@ public class SpravceSouboru {
         return dialog.isUspech();
     }
 
-    private static void uvolniZamek(String nazevZamekSouboru) {
+    private void uvolniZamek(String nazevZamekSouboru) {
         try {
             Files.deleteIfExists(getCesta(nazevZamekSouboru));
         } catch (IOException e) {
@@ -410,13 +463,13 @@ public class SpravceSouboru {
         }
     }
 
-    private static void podepisSoubor(Path cesta, String nazevSigSouboru) throws IOException {
+    private void podepisSoubor(Path cesta, String nazevSigSouboru) throws IOException {
         byte[] dataSouboru = Files.readAllBytes(cesta);
         String hashSouboru = Uzivatel.checkSum(new String(dataSouboru, StandardCharsets.UTF_8)); 
         Files.writeString(getCesta(nazevSigSouboru), hashSouboru);
     }
 
-    private static void zkontrolujIntegritu(Path cestaKDatum, Path cestaKPodpisu, String nazevSouboru) throws IOException {
+    private void zkontrolujIntegritu(Path cestaKDatum, Path cestaKPodpisu, String nazevSouboru) throws IOException {
         if (Files.exists(cestaKDatum)) {
             if (Files.exists(cestaKPodpisu)) {
                 String aktualniPodpis = Uzivatel.checkSum(new String(Files.readAllBytes(cestaKDatum), StandardCharsets.UTF_8));
@@ -431,43 +484,47 @@ public class SpravceSouboru {
         }
     }
 
-    public static void zaznamenejChybuIntegrity(String chyba) {
+    public void zaznamenejChybuIntegrity(String chyba) {
         chybyIntegrity.add(chyba);
+        logEvent("ERROR", chyba);
+    }
+
+    public void logEvent(String level, String zprava) {
         
-        if (!ziskejZamek(SOUBOR_LOCK_LOG, "appSystem")) {
+        if (!ziskejZamek(souborLockLog, "appSystem")) {
             System.err.println("Soubor logu je blokován jiným procesem. Nelze zapsat událost.");
             return;
         }
 
         try {
             String cas = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            String logZaznam = cas + " - " + chyba + System.lineSeparator();
+            String logZaznam = String.format("%s [%-7s] %s%n", cas, level, zprava);
             
-            Path cestaKLogu = getCesta(SOUBOR_DAT_LOG);
+            Path cestaKLogu = getCesta(souborDatLog);
             Files.writeString(cestaKLogu, logZaznam, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            podepisSoubor(cestaKLogu, SOUBOR_DAT_LOG + ".sig");
+            podepisSoubor(cestaKLogu, souborDatLog + ".sig");
         } catch (IOException e) {
             System.err.println("Nepodařilo se zapsat do logu: " + e.getMessage());
         } finally {
-            uvolniZamek(SOUBOR_LOCK_LOG);
+            uvolniZamek(souborLockLog);
         }
     }
 
-    public static void smazVsechnaData(String prihlasenyUzivatel) {
-        if (ziskejZamek(SOUBOR_LOCK_KAFARI, prihlasenyUzivatel)) {
-            try { Files.deleteIfExists(getCesta(SOUBOR_DAT_KAFARI)); Files.deleteIfExists(getCesta(SOUBOR_DAT_KAFARI + ".sig")); } 
+    public void smazVsechnaData(String prihlasenyUzivatel) {
+        if (ziskejZamek(souborLockKafari, prihlasenyUzivatel)) {
+            try { Files.deleteIfExists(getCesta(souborDatKafari)); Files.deleteIfExists(getCesta(souborDatKafari + ".sig")); } 
             catch (IOException e) { System.err.println("Nelze smazat kafari.csv"); }
-            uvolniZamek(SOUBOR_LOCK_KAFARI);
+            uvolniZamek(souborLockKafari);
         }
-        if (ziskejZamek(SOUBOR_LOCK_SKLAD, prihlasenyUzivatel)) {
-            try { Files.deleteIfExists(getCesta(SOUBOR_DAT_SKLAD)); Files.deleteIfExists(getCesta(SOUBOR_DAT_SKLAD + ".sig")); } 
+        if (ziskejZamek(souborLockSklad, prihlasenyUzivatel)) {
+            try { Files.deleteIfExists(getCesta(souborDatSklad)); Files.deleteIfExists(getCesta(souborDatSklad + ".sig")); } 
             catch (IOException e) { System.err.println("Nelze smazat sklad.csv"); }
-            uvolniZamek(SOUBOR_LOCK_SKLAD);
+            uvolniZamek(souborLockSklad);
         }
-        if (ziskejZamek(SOUBOR_LOCK_VYUCTOVANI, prihlasenyUzivatel)) {
-            try { Files.deleteIfExists(getCesta(SOUBOR_DAT_VYUCTOVANI)); Files.deleteIfExists(getCesta(SOUBOR_DAT_VYUCTOVANI + ".sig")); } 
+        if (ziskejZamek(souborLockVyuctovani, prihlasenyUzivatel)) {
+            try { Files.deleteIfExists(getCesta(souborDatVyuctovani)); Files.deleteIfExists(getCesta(souborDatVyuctovani + ".sig")); } 
             catch (IOException e) { System.err.println("Nelze smazat vyuctovani.csv"); }
-            uvolniZamek(SOUBOR_LOCK_VYUCTOVANI);
+            uvolniZamek(souborLockVyuctovani);
         }
     }
 

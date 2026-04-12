@@ -13,6 +13,8 @@ public class ZmenaHeslaDialog extends JDialog {
     private JPasswordField passwordFieldStare;
     private JPasswordField passwordFieldNove1;
     private JPasswordField passwordFieldNove2;
+    private char[] stareHeslo;
+    private char[] noveHeslo;
     private boolean succeeded;
 
     public ZmenaHeslaDialog(Frame parent) {
@@ -38,11 +40,18 @@ public class ZmenaHeslaDialog extends JDialog {
         getRootPane().setDefaultButton(btnOk);
 
         btnOk.addActionListener(e -> {
-            if (!Arrays.equals(passwordFieldNove1.getPassword(), passwordFieldNove2.getPassword())) {
+            char[] oldH = passwordFieldStare.getPassword();
+            char[] h1 = passwordFieldNove1.getPassword();
+            char[] h2 = passwordFieldNove2.getPassword();
+            if (!Arrays.equals(h1, h2)) {
                 JOptionPane.showMessageDialog(this, "Nová hesla se neshodují!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                Arrays.fill(oldH, '0'); Arrays.fill(h1, '0'); Arrays.fill(h2, '0');
                 return;
             }
             succeeded = true;
+            this.stareHeslo = oldH;
+            this.noveHeslo = h1;
+            Arrays.fill(h2, '0');
             dispose();
         });
 
@@ -63,7 +72,7 @@ public class ZmenaHeslaDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
-    public String getStareHeslo() { return new String(passwordFieldStare.getPassword()); }
-    public String getNoveHeslo() { return new String(passwordFieldNove1.getPassword()); }
+    public char[] getStareHeslo() { return stareHeslo; }
+    public char[] getNoveHeslo() { return noveHeslo; }
     public boolean isSucceeded() { return succeeded; }
 }

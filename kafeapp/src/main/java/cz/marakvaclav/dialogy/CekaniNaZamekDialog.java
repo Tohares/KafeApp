@@ -2,6 +2,9 @@ package cz.marakvaclav.dialogy;
 
 import javax.swing.*;
 import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.function.Supplier;
 
 /**
@@ -13,7 +16,7 @@ public class CekaniNaZamekDialog extends JDialog {
     private boolean uspech = false;
 
     public CekaniNaZamekDialog(Supplier<Boolean> pokusZiskatZamek) {
-        super((java.awt.Frame)null, "Čekání na uvolnění dat", true);
+        super((Frame)null, "Čekání na uvolnění dat", true);
         setLayout(new BorderLayout(10, 10));
         setAlwaysOnTop(true);
         
@@ -53,9 +56,9 @@ public class CekaniNaZamekDialog extends JDialog {
         });
         
         // Jakmile se okno zavře (odpočtem, stornem nebo křížkem), je nutné Timer zastavit
-        addWindowListener(new java.awt.event.WindowAdapter() {
+        addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+            public void windowClosed(WindowEvent windowEvent) {
                 timer.stop();
             }
         });

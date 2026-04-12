@@ -7,7 +7,7 @@ import javax.swing.table.DefaultTableModel;
  * Definuje sloupce pro celkový přehled o uživatelích a umožňuje rychlou editaci počtu nezúčtovaných káv.
  */
 public class KafariTableModel extends DefaultTableModel {
-    private static final String[] SLOUPCE = {"Uživatel (login)", "Nezúčtované kávy", "Zaplacené kávy", "Účtované kávy"};
+    private static final String[] SLOUPCE = {"Uživatel (login)", "Nezúčtované kávy", "Zrušené kávy", "Zaplacené kávy", "Účtované kávy"};
 
     public KafariTableModel() {
         super(SLOUPCE, 0);

@@ -1,6 +1,7 @@
 package cz.marakvaclav.entity;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * Entita reprezentující konkrétní naskladněnou položku nebo její střípek (např. spotřebovanou část balení).
@@ -109,5 +110,18 @@ public class PolozkaSkladu {
 
     public void setMenaPenezni(String menaPenezni) {
         this.menaPenezni = menaPenezni;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PolozkaSkladu that = (PolozkaSkladu) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

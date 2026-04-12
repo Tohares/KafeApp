@@ -2,14 +2,10 @@ package cz.marakvaclav.entity;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
+import java.util.Objects;
 
 /**
  * Entita reprezentující záznam o vyúčtování. Může nabývat dvou významů:
@@ -17,18 +13,19 @@ import com.google.zxing.qrcode.QRCodeWriter;
  * 2. Osobní vyúčtování: Patří konkrétnímu kafaři, sdílí datum hlavního vyúčtování a udává dlužnou částku uživatele.
  */
 public class Vyuctovani {
-    List<PolozkaSkladu> spotrebovanePolozky = null;
-    String login = null;
-    LocalDate datumVystaveni = null;
-    int pocetUctovanychKavCelkem = 1;
-    BigDecimal celkovaCena = null;
-    BigDecimal cenaJedneKavy = null;
-    int pocetVypitychKav = 0;
-    BigDecimal cenaZaVypiteKavy = null;
-    boolean stavPlatby = false;
-    LocalDate datumPlatby = null;
+    private List<PolozkaSkladu> spotrebovanePolozky = null;
+    private String login = null;
+    private LocalDate datumVystaveni = null;
+    private int pocetUctovanychKavCelkem = 1;
+    private BigDecimal celkovaCena = null;
+    private BigDecimal cenaJedneKavy = null;
+    private int pocetVypitychKav = 0;
+    private BigDecimal cenaZaVypiteKavy = null;
+    private boolean stavPlatby = false;
+    private LocalDate datumPlatby = null;
     private String platebniUcetIBAN = null;
     private String platebniUcetCZ = null;
+    private boolean oznamenoJakoZaplacene = false;
 
     public Vyuctovani() {}
 
@@ -39,6 +36,7 @@ public class Vyuctovani {
         this.pocetUctovanychKavCelkem = pocetUctovanychKavCelkem;
         this.pocetVypitychKav = pocetUctovanychKavCelkem;
         stavPlatby = false;
+        oznamenoJakoZaplacene = false;
         urciCelkovouCenu();
         cenaZaVypiteKavy = celkovaCena;
         cenaJedneKavy = celkovaCena.divide(BigDecimal.valueOf(pocetUctovanychKavCelkem), 2, RoundingMode.HALF_UP);
@@ -54,6 +52,7 @@ public class Vyuctovani {
         this.pocetVypitychKav = pocetVypitychKav;
         this.cenaZaVypiteKavy = this.cenaJedneKavy.multiply(BigDecimal.valueOf(this.pocetVypitychKav));
         this.stavPlatby = false;
+        this.oznamenoJakoZaplacene = false;
     }
 
     private void urciCelkovouCenu() {
@@ -85,26 +84,16 @@ public class Vyuctovani {
         return sb.toString();
     }
 
-    // Vygeneruje QR kód pro mobilní bankovnictví na základě standardu SPAYD (Short Payment Descriptor)
-    public BufferedImage vytvorQRKodProPlatbu(Admin admin) {
+    // Vygeneruje platební řetězec podle standardu SPAYD (Short Payment Descriptor)
+    public String generujSpaydRetezec(Admin admin) {
         String iban = (platebniUcetIBAN != null && !platebniUcetIBAN.isEmpty()) ? platebniUcetIBAN : admin.getCisloUctuIBAN();
         if (iban == null || iban.isEmpty()) return null;
 
-        // Sestavení platebního řetězce podle českého bankovního standardu SPAYD (Short Payment Descriptor)
-        String messageQR = "SPD*1.0*ACC:" + iban + 
+        return "SPD*1.0*ACC:" + iban + 
                            "*AM:" + cenaZaVypiteKavy.setScale(2, RoundingMode.HALF_UP).toPlainString() + 
                            "*CC:CZK*MSG:KAFE-" + login + 
                            "-" + datumVystaveni + 
                            "*END";
-        try {
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(messageQR, BarcodeFormat.QR_CODE, 250, 250);
-            
-            return MatrixToImageWriter.toBufferedImage(bitMatrix);
-        } catch (Exception e) {
-            System.err.println("Chyba při generování QR kódu: " + e.getMessage());
-            return null;
-        }
     } 
 
     public List<PolozkaSkladu> getSpotrebovanePolozky() {
@@ -161,6 +150,9 @@ public class Vyuctovani {
     public String getPlatebniUcetCZ() { return platebniUcetCZ; }
     public void setPlatebniUcetCZ(String platebniUcetCZ) { this.platebniUcetCZ = platebniUcetCZ; }
 
+    public boolean isOznamenoJakoZaplacene() { return oznamenoJakoZaplacene; }
+    public void setOznamenoJakoZaplacene(boolean oznameno) { this.oznamenoJakoZaplacene = oznameno; }
+
     public String toCsv() {
         StringBuilder sb = new StringBuilder();
         sb.append(login).append(";");
@@ -174,6 +166,7 @@ public class Vyuctovani {
         sb.append(datumPlatby).append(";");
         sb.append(platebniUcetIBAN).append(";");
         sb.append(platebniUcetCZ).append(";");
+        sb.append(oznamenoJakoZaplacene).append(";");
 
         for (PolozkaSkladu polozka : spotrebovanePolozky) {
             sb.append(polozka.toCsv()).append(";");
@@ -212,8 +205,10 @@ public class Vyuctovani {
         platebniUcetIBAN = line[9].equals("null") ? null : line[9];
         platebniUcetCZ = line[10].equals("null") ? null : line[10];
 
+        oznamenoJakoZaplacene = Boolean.parseBoolean(line[11]);
+
         spotrebovanePolozky = new ArrayList<>();
-        for (int i = 11; i < line.length; i += 7) {
+        for (int i = 12; i < line.length; i += 7) {
             Surovina surovina = Surovina.fromString(line[i+1]);
             if (surovina == null) throw new IllegalArgumentException("Neznámý druh suroviny: " + line[i+1]);
             
@@ -223,4 +218,19 @@ public class Vyuctovani {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vyuctovani that = (Vyuctovani) o;
+        
+        return Objects.equals(login, that.login) &&
+               Objects.equals(datumVystaveni, that.datumVystaveni) &&
+               (cenaZaVypiteKavy == null ? that.cenaZaVypiteKavy == null : that.cenaZaVypiteKavy != null && cenaZaVypiteKavy.compareTo(that.cenaZaVypiteKavy) == 0);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(login, datumVystaveni);
+    }
 }

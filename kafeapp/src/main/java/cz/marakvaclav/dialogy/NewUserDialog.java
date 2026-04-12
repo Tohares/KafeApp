@@ -14,7 +14,7 @@ import java.util.Arrays;
  */
 public class NewUserDialog extends JDialog {
     private String login;
-    private String heslo;
+    private char[] heslo;
     private boolean succeeded;
 
     public NewUserDialog(Frame parent, List<Kafar> kafari) {
@@ -39,21 +39,26 @@ public class NewUserDialog extends JDialog {
 
         btnOk.addActionListener(e -> {
             // Validace shody hesel a unikátnosti uživatelského jména
-            if (!Arrays.equals(passwordFieldHesloFirst.getPassword(), passwordFieldHesloSecond.getPassword())) {
+            char[] h1 = passwordFieldHesloFirst.getPassword();
+            char[] h2 = passwordFieldHesloSecond.getPassword();
+            if (!Arrays.equals(h1, h2)) {
                 JOptionPane.showMessageDialog(this, "Hesla se neshoduji!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                Arrays.fill(h1, '0'); Arrays.fill(h2, '0');
                 return;
             }
             else {
                 for (Kafar k : kafari) {
                     if (k.getLogin().equals(textFieldLogin.getText())) {
                         JOptionPane.showMessageDialog(this, "Uzivatel s timto loginem uz existuje!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                        Arrays.fill(h1, '0'); Arrays.fill(h2, '0');
                         return;
                     }
                 }
             }
             succeeded = true;
             this.login = textFieldLogin.getText();
-            this.heslo = new String(passwordFieldHesloSecond.getPassword());
+            this.heslo = h1;
+            Arrays.fill(h2, '0'); // Zahodíme nepotřebnou kopii, getHeslo() převezme h1
             dispose(); // Zavre dialog
         });
 
@@ -76,7 +81,7 @@ public class NewUserDialog extends JDialog {
         return login;
     }
 
-    public String getHeslo() {
+    public char[] getHeslo() {
         return heslo;
     }
 

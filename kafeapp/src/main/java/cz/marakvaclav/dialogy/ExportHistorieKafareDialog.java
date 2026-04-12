@@ -4,6 +4,8 @@ import cz.marakvaclav.entity.Vyuctovani;
 
 import java.awt.*;
 import java.util.List;
+import java.io.File;
+import java.io.PrintWriter;
 import javax.swing.*;
 
 /**
@@ -47,7 +49,18 @@ public class ExportHistorieKafareDialog extends JDialog{
         btnExport.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-                try (java.io.PrintWriter writer = new java.io.PrintWriter(fileChooser.getSelectedFile())) {
+                File file = fileChooser.getSelectedFile();
+                
+                if (file.exists()) {
+                    int response = JOptionPane.showConfirmDialog(this, 
+                            "Soubor již existuje. Opravdu jej chcete přepsat?", 
+                            "Potvrzení přepsání", 
+                            JOptionPane.YES_NO_OPTION, 
+                            JOptionPane.WARNING_MESSAGE);
+                    if (response != JOptionPane.YES_OPTION) return;
+                }
+                
+                try (PrintWriter writer = new PrintWriter(file)) {
                     writer.println("Datum;PocetKav;Cena/ks;Celkem;Mena;Zaplaceno");
                     for (Vyuctovani v : historie) {
                         writer.println(

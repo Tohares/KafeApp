@@ -1,7 +1,8 @@
 package cz.marakvaclav.dialogy;
 
 import cz.marakvaclav.entity.*;
-import cz.marakvaclav.sluzby.KafeController;
+import cz.marakvaclav.sluzby.KafeUIController;
+import cz.marakvaclav.sluzby.SpravceSouboru;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +15,7 @@ import java.io.PrintWriter;
  */
 public class ExportHistorieVsehoDialog extends JDialog {
     
-    public ExportHistorieVsehoDialog(Frame parent, KafeController controller) {
+    public ExportHistorieVsehoDialog(Frame parent, KafeUIController controller) {
         super(parent, "Export kompletní zálohy", true);
         setLayout(new BorderLayout(10, 10));
 
@@ -32,6 +33,16 @@ public class ExportHistorieVsehoDialog extends JDialog {
             fileChooser.setDialogTitle("Uložit kompletní zálohu jako...");
             if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
+                
+                if (file.exists()) {
+                    int response = JOptionPane.showConfirmDialog(this, 
+                            "Soubor již existuje. Opravdu jej chcete přepsat?", 
+                            "Potvrzení přepsání", 
+                            JOptionPane.YES_NO_OPTION, 
+                            JOptionPane.WARNING_MESSAGE);
+                    if (response != JOptionPane.YES_OPTION) return;
+                }
+                
                 exportData(file, controller);
                 dispose();
             }
@@ -47,23 +58,23 @@ public class ExportHistorieVsehoDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
-    private void exportData(File file, KafeController controller) {
+    private void exportData(File file, KafeUIController controller) {
         try {
             StringBuilder sb = new StringBuilder();
             
-            sb.append("===KAFARI===\n");
+            sb.append(SpravceSouboru.HEADER_KAFARI).append("\n");
             sb.append(controller.getAdmin().toCsv()).append("\n"); // Včetně dat administrátora!
             for (Kafar k : controller.getKafari()) sb.append(k.toCsv()).append("\n");
             
-            sb.append("===SKLAD===\n");
+            sb.append(SpravceSouboru.HEADER_SKLAD).append("\n");
             for (PolozkaSkladu p : controller.getSklad()) sb.append(p.toCsv()).append("\n");
             
-            sb.append("===VYUCTOVANI===\n");
+            sb.append(SpravceSouboru.HEADER_VYUCTOVANI).append("\n");
             for (Vyuctovani v : controller.getSeznamVyuctovani()) sb.append(v.toCsv()).append("\n");
 
             // Vygeneruje se podpis pro celý tento obsah
             String signature = Uzivatel.checkSum(sb.toString());
-            sb.append("===SIGNATURE===\n").append(signature).append("\n");
+            sb.append(SpravceSouboru.HEADER_SIGNATURE).append("\n").append(signature).append("\n");
 
             try (PrintWriter writer = new PrintWriter(file)) {
                 writer.write(sb.toString());

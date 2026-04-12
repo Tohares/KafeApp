@@ -1,5 +1,7 @@
 package cz.marakvaclav.entity;
 
+import java.math.BigInteger;
+
 /**
  * Entita reprezentující administrátora systému. 
  * Oproti běžnému uživateli má navíc nastavené bankovní údaje pro příjem plateb od ostatních kafařů.
@@ -8,11 +10,11 @@ public class Admin extends Uzivatel {
     private String cisloUctuIBAN = null;
     private String cisloUctuCZ = null;
     
-    public Admin(String login, String heslo) {
+    public Admin(String login, char[] heslo) {
         super(login, heslo);
     }
 
-    public Admin(String login, String heslo, String cisloUctuIBAN, String cisloUctuCZ) {
+    public Admin(String login, char[] heslo, String cisloUctuIBAN, String cisloUctuCZ) {
         super(login, heslo);
         this.cisloUctuIBAN = cisloUctuIBAN;
         this.cisloUctuCZ = cisloUctuCZ;
@@ -60,8 +62,8 @@ public class Admin extends Uzivatel {
         }
         
         // Zbytek po dělení číslem 97 musí být podle normy ISO 13616 přesně 1
-        java.math.BigInteger bigInt = new java.math.BigInteger(numericIban.toString());
-        return bigInt.mod(new java.math.BigInteger("97")).intValue() == 1;
+        BigInteger bigInt = new BigInteger(numericIban.toString());
+        return bigInt.mod(new BigInteger("97")).intValue() == 1;
     }
 
     /**
@@ -101,6 +103,31 @@ public class Admin extends Uzivatel {
         } catch (NumberFormatException e) {
             // Pokud se cokoliv nepodařilo převést na číslo, formát je neplatný.
             return false;
+        }
+    }
+
+    /**
+     * Vytvoří české číslo účtu z platného českého IBANu.
+     * @param iban Český IBAN (24 znaků začínajících na CZ).
+     * @return Lokální formát účtu (např. 1234567890/0800), nebo prázdný řetězec při chybě.
+     */
+    public static String getCzAccountFromIban(String iban) {
+        if (iban == null) return "";
+        String clean = iban.replaceAll("\\s+", "").toUpperCase();
+        if (!clean.startsWith("CZ") || clean.length() != 24) return "";
+        
+        try {
+            String bankCode = clean.substring(4, 8);
+            long prefix = Long.parseLong(clean.substring(8, 14));
+            long number = Long.parseLong(clean.substring(14, 24));
+            
+            if (prefix > 0) {
+                return prefix + "-" + number + "/" + bankCode;
+            } else {
+                return number + "/" + bankCode;
+            }
+        } catch (NumberFormatException e) {
+            return "";
         }
     }
 

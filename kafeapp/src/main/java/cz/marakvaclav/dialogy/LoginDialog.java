@@ -54,8 +54,8 @@ public class LoginDialog extends JDialog {
         return textFieldLogin.getText();
     }
 
-    public String getHeslo() {
-        return new String(passwordFieldHeslo.getPassword());
+    public char[] getHeslo() {
+        return passwordFieldHeslo.getPassword();
     }
 
     public boolean isSucceeded() {

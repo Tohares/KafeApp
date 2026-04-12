@@ -3,6 +3,7 @@ package cz.marakvaclav.entity;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Objects;
 
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -14,7 +15,7 @@ public class Uzivatel {
     protected String login;
     protected String hesloHash;
 
-    public Uzivatel(String login, String heslo) {
+    public Uzivatel(String login, char[] heslo) {
         this.login = login;
         hesloHash = hashHeslo(heslo);
     }
@@ -22,17 +23,20 @@ public class Uzivatel {
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
     public String getHesloHash() { return hesloHash; }
-    public void setHeslo(String heslo) { hesloHash = hashHeslo(heslo); }
+    public void setHeslo(char[] heslo) { hesloHash = hashHeslo(heslo); }
     public void setHesloHash(String hesloHash) { this.hesloHash = hesloHash; }
 
     // Vygeneruje bezpečný hash hesla pomocí algoritmu BCrypt (včetně náhodné kryptografické soli)
-    public static String hashHeslo(String heslo) {
-        return BCrypt.hashpw(heslo, BCrypt.gensalt());
+    public static String hashHeslo(char[] heslo) {
+        if (heslo == null) return null;
+        String hesloStr = new String(heslo); // Zkrácení života Stringu na absolutní minimum
+        return BCrypt.hashpw(hesloStr, BCrypt.gensalt());
     }
 
-    public static boolean overHeslo(String zadaneHeslo, String ulozenyHash) {
-        if (ulozenyHash != null && ulozenyHash.startsWith("$2a$")) {
-            return BCrypt.checkpw(zadaneHeslo, ulozenyHash);
+    public static boolean overHeslo(char[] zadaneHeslo, String ulozenyHash) {
+        if (zadaneHeslo != null && ulozenyHash != null && ulozenyHash.startsWith("$2a$")) {
+            String hesloStr = new String(zadaneHeslo);
+            return BCrypt.checkpw(hesloStr, ulozenyHash);
         }
         return false;
     }
@@ -40,7 +44,7 @@ public class Uzivatel {
     // Generuje kryptografický kontrolní součet (SHA-256) pro ověřování celistvosti a pravosti uložených datových souborů
     public static String checkSum(String line) {
         try {
-            String salt = getSecretSalt();
+            String salt = "tVpT3wR66byYtWuuZu";
             String saltedLine = salt + line;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = digest.digest(saltedLine.getBytes());
@@ -48,13 +52,18 @@ public class Uzivatel {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Chyba: Algoritmus SHA-256 nebyl nalezen!");
         }
+    }  
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Uzivatel uzivatel = (Uzivatel) o;
+        return Objects.equals(login, uzivatel.login);
     }
 
-    private static String getSecretSalt() {
-        String part1 = Uzivatel.class.getSimpleName();
-        String part2 = String.valueOf(Uzivatel.class.getDeclaredMethods().length);
-        String part3 = "tVpT3wR66byYtWuuZu";
-        
-        return part1 + part2 + part3;
-    }    
+    @Override
+    public int hashCode() {
+        return Objects.hash(login);
+    }
 }

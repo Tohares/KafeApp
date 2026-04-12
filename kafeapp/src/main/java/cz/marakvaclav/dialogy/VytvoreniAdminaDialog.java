@@ -4,7 +4,8 @@ import cz.marakvaclav.entity.Admin;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  * Úvodní inicializační dialog, který se zobrazí pouze při historicky prvním spuštění aplikace.
@@ -19,8 +20,12 @@ public class VytvoreniAdminaDialog extends JDialog {
     private JTextField textFieldCz;
     private boolean succeeded;
     private Admin admin;
+    
+    public interface AdminCreator {
+        Admin create(String login, char[] h1, char[] h2, String iban, String cz);
+    }
 
-    public VytvoreniAdminaDialog(Frame parent) {
+    public VytvoreniAdminaDialog(Frame parent, AdminCreator creator) {
         super(parent, "První spuštění - Vytvoření administrátora", true);
         
         JPanel panel = new JPanel(new GridLayout(5, 2, 10, 10));
@@ -45,42 +50,44 @@ public class VytvoreniAdminaDialog extends JDialog {
         textFieldCz = new JTextField(15);
         panel.add(textFieldCz);
 
+        JLabel warningLabelCz = new JLabel("<html>&nbsp;<br>&nbsp;</html>");
+        warningLabelCz.setForeground(new Color(220, 53, 69)); // Varovná červená
+        warningLabelCz.setFont(new Font("Arial", Font.PLAIN, 11));
+        warningLabelCz.setHorizontalAlignment(SwingConstants.RIGHT); // Zarovnáme doprava pod textové pole
+
+        textFieldIban.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) { update(); }
+            public void removeUpdate(DocumentEvent e) { update(); }
+            public void insertUpdate(DocumentEvent e) { update(); }
+            private void update() {
+                String iban = textFieldIban.getText().replaceAll("\\s+", "").toUpperCase();
+                if (iban.startsWith("CZ") && iban.length() == 24) {
+                    String vygenerovanyUcet = Admin.getCzAccountFromIban(iban);
+                    if (!vygenerovanyUcet.isEmpty()) {
+                        textFieldCz.setText(vygenerovanyUcet);
+                        warningLabelCz.setText("<html>&nbsp;<br>&nbsp;</html>");
+                    }
+                } else if (!iban.isEmpty() && !iban.startsWith("CZ")) {
+                    warningLabelCz.setText("<html>Za shodu CZ účtu se zahraničním<br>IBANem ručí administrátor.</html>");
+                } else {
+                    warningLabelCz.setText("<html>&nbsp;<br>&nbsp;</html>");
+                }
+            }
+        });
+
         JButton btnOk = new JButton("Vytvořit administrátora");
         JButton btnStorno = new JButton("Ukončit aplikaci");
 
         getRootPane().setDefaultButton(btnOk);
 
         btnOk.addActionListener(e -> {
-            // Nutná validace před založením nejdůležitějšího účtu v systému
-            if (textFieldLogin.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Login nesmí být prázdný!", "Chyba", JOptionPane.ERROR_MESSAGE);
-                return;
+            try {
+                admin = creator.create(textFieldLogin.getText(), passwordFieldHesloFirst.getPassword(), passwordFieldHesloSecond.getPassword(), textFieldIban.getText(), textFieldCz.getText());
+                succeeded = true;
+                dispose();
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Chyba", JOptionPane.ERROR_MESSAGE);
             }
-            if (!Arrays.equals(passwordFieldHesloFirst.getPassword(), passwordFieldHesloSecond.getPassword())) {
-                JOptionPane.showMessageDialog(this, "Hesla se neshodují!", "Chyba", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (passwordFieldHesloFirst.getPassword().length == 0) {
-                JOptionPane.showMessageDialog(this, "Heslo nesmí být prázdné!", "Chyba", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            String iban = textFieldIban.getText().trim();
-            if (!iban.isEmpty() && !Admin.isValidIBAN(iban)) {
-                JOptionPane.showMessageDialog(this, "Neplatný formát IBAN!", "Chyba", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            String czAccount = textFieldCz.getText().trim();
-            if (!Admin.isCzAccountConsistentWithIban(czAccount, iban)) {
-                JOptionPane.showMessageDialog(this, "České číslo účtu neodpovídá zadanému IBANu!", "Chyba", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            String cleanIban = iban.replaceAll("\\s+", "").toUpperCase();
-            admin = new Admin(textFieldLogin.getText().trim(), new String(passwordFieldHesloFirst.getPassword()), cleanIban, czAccount);
-            succeeded = true;
-            dispose();
         });
 
         btnStorno.addActionListener(e -> {
@@ -92,8 +99,13 @@ public class VytvoreniAdminaDialog extends JDialog {
         buttonPanel.add(btnOk);
         buttonPanel.add(btnStorno);
 
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        getContentPane().add(panel, BorderLayout.CENTER);
+        // Formulář i štítek obalíme do hlavního čistého panelu
+        JPanel mainContent = new JPanel(new BorderLayout(0, 5));
+        mainContent.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainContent.add(panel, BorderLayout.NORTH);
+        mainContent.add(warningLabelCz, BorderLayout.CENTER);
+
+        getContentPane().add(mainContent, BorderLayout.CENTER);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
         // Nelze zavřít křížkem - dokud není admin vytvořen, aplikace nemá smysl
